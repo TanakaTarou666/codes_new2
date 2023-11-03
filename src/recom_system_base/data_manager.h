@@ -1,6 +1,6 @@
 #include <iomanip>
 
-#define BOOK
+#define ARTIFICIALITY
 
 const double convergence_criteria = 0.001;
 const int missing_pattern = 5;

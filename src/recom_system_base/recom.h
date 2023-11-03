@@ -8,11 +8,14 @@
 #include <random>
 #include <vector>
 
+#include "../math_utils/sparse_vector.h"
 #include "../math_utils/sparse_matrix.h"
-#include "data_manager.h"
 
 #ifndef __RECOM__
 #define __RECOM__
+
+
+#include "data_manager.h"
 
 class Recom {
    private:

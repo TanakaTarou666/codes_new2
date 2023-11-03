@@ -2,8 +2,8 @@
 
 FMBase::FMBase(int missing_pattern) : Recom(missing_pattern) {}
 
-double FMBase::predict_y(Vector &x, double w0, Vector &w, Matrix &v) {
-    int n = x.size();  // 非ゼロデータの数
+double FMBase::predict_y(SparseVector &x, double w0, Vector w, Matrix &v) {
+    int n = x.nnz();  // 非ゼロデータの数
     int k = v.cols();  // 因子数
 
     double sum_vixi = 0.0;
@@ -11,19 +11,15 @@ double FMBase::predict_y(Vector &x, double w0, Vector &w, Matrix &v) {
         double sum_vx = 0.0;
         double sum_v2x2 = 0.0;
         for (int j = 0; j < n; ++j) {
-            if (x[j] != 0) {
-                double vx = v[j][f] * x[j];
+                double vx = v[x(j,"index")][f] * x(j);
                 sum_vx += vx;
                 sum_v2x2 += vx * vx;
-            }
         }
         sum_vixi += sum_vx * sum_vx - sum_v2x2;
     }
     double result = w0;
     for (int j = 0; j < n; ++j) {
-        if (x[j] != 0) {
-            result += x[j] * w[j];
-        }
+            result += x(j) * w[x(j,"index")];
     }
     result += 0.5 * sum_vixi;
     return result;

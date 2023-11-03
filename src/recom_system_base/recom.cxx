@@ -84,9 +84,9 @@ void Recom::revise_missing_values(void) {
             // 要素を0にする
             sparse_missing_data_(tmprow, tmpcol) = 0;
             // 欠損した行番号を保存
-            missing_data_indices_[m][0] = tmprow;
+            missing_data_indices_(m,0) = tmprow;
             // 欠損した列番号を保存
-            missing_data_indices_[m][1] = sparse_missing_data_(tmprow, tmpcol, "index");
+            missing_data_indices_(m,1) = sparse_missing_data_(tmprow, tmpcol, "index");
             // スパースデータの列番号を保存
             sparse_missing_data_cols_[m] = tmpcol;
             m++;
@@ -102,7 +102,7 @@ void Recom::revise_missing_values(void) {
 void Recom::calculate_mae(int current_missing_pattern) {
     double result = 0.0;
     for (int m = 0; m < num_missing_value_; m++) {
-        result += fabs(sparse_correct_data_(missing_data_indices_[m][0], sparse_missing_data_cols_[m]) - prediction_[m]);
+        result += fabs(sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m]) - prediction_[m]);
     }
     mae_[current_missing_pattern] = result / (double)num_missing_value_;
 
@@ -120,15 +120,15 @@ void Recom::calculate_roc(int current_missing_pattern) {
         double siki = (double)index / 100.0;
         for (int m = 0; m < num_missing_value_; m++) {
             // 正解値が閾値以上かつ，予測値が閾値以上場合
-            if ((siki <= sparse_correct_data_(missing_data_indices_[m][0], sparse_missing_data_cols_[m])) && (siki <= prediction_[m])) TP += 1.0;
+            if ((siki <= sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m])) TP += 1.0;
             // 正解値が閾値を下回ったかつ，予測値が閾値上回った場合
-            else if ((siki > sparse_correct_data_(missing_data_indices_[m][0], sparse_missing_data_cols_[m])) && (siki <= prediction_[m]))
+            else if ((siki > sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m]))
                 FP += 1.0;
             // 正解値が閾値上回ったかつ，予測値が閾値を下回った場合
-            else if ((siki <= sparse_correct_data_(missing_data_indices_[m][0], sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
+            else if ((siki <= sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
                 FN += 1.0;
             // それ以外
-            else if ((siki > sparse_correct_data_(missing_data_indices_[m][0], sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
+            else if ((siki > sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
                 TN += 1.0;
             else
                 continue;

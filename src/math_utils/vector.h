@@ -1,4 +1,10 @@
 
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <new>
+
 #ifndef __VECTOR__
 #define __VECTOR__
 
@@ -11,7 +17,7 @@ class Vector {
    public:
     Vector(void);
     explicit Vector(int n);
-    Vector(double* data, int size);
+    Vector(double* values, int size);
     Vector(int n, double value, const char* flag);
     Vector(const Vector& arg);
     Vector& operator=(const Vector& rhs);

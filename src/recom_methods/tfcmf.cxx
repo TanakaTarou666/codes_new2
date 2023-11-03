@@ -133,7 +133,7 @@ void TFCMF::set_initial_values(int &seed) {
 }
 
 double TFCMF::calculate_objective_value() {
-    double result;
+    double result=0;
     double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < num_users; i++) {

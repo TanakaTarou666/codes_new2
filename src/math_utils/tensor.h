@@ -25,14 +25,14 @@ class Tensor {
     int cols(void) const;
     // 演算子
     Matrix& operator[](int height);
-    const Matrix operator[](int height) const;
+    Matrix operator[](int height) const;
     Tensor& operator=(const Tensor& arg);  // コピー代入演算子
     Tensor& operator=(Tensor&& arg);
 };
 Tensor operator+(Tensor& lhs, Tensor& rhs);
 Tensor operator-(Tensor& lhs, Tensor& rhs);
 // 各要素を2乗し足し合わせたものを平方根
-double frobenius_norm(Tensor& arg);
+double frobenius_norm(const Tensor& arg);
 
 
 #endif

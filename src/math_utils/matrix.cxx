@@ -1,11 +1,10 @@
 #include "matrix.h"
 
-#include <cmath>
-#include <iostream>
+Matrix::Matrix(int rows, int cols)
+    : rows_(rows), cols_(cols), values_(new double[rows * cols]) {}
 
-Matrix::Matrix(int rows, int cols) : rows_(rows), cols_(cols), values_(new double[rows * cols]) {}
-
-Matrix::Matrix(int rows, int cols, double arg) : rows_(rows), cols_(cols), values_(new double[rows * cols]) {
+Matrix::Matrix(int rows, int cols, double arg)
+    : rows_(rows), cols_(cols), values_(new double[rows * cols]) {
     for (int i = 0; i < rows * cols; i++) {
         values_[i] = arg;
     }
@@ -13,7 +12,10 @@ Matrix::Matrix(int rows, int cols, double arg) : rows_(rows), cols_(cols), value
 
 Matrix::Matrix(void) : rows_(0), cols_(0), values_(NULL) {}
 // Copy constructor
-Matrix::Matrix(const Matrix& other) : rows_(other.rows_), cols_(other.cols_), values_(new double[other.rows_ * other.cols_]) {
+Matrix::Matrix(const Matrix& other)
+    : rows_(other.rows_),
+      cols_(other.cols_),
+      values_(new double[other.rows_ * other.cols_]) {
     for (int i = 0; i < rows_ * cols_; i++) {
         values_[i] = other.values_[i];
     }
@@ -44,11 +46,15 @@ int Matrix::rows() const { return rows_; }
 int Matrix::cols() const { return cols_; }
 
 // Element access operators
-double& Matrix::operator()(int row, int col) { return values_[row * cols_ + col]; }
+double& Matrix::operator()(int row, int col) {
+    return values_[row * cols_ + col];
+}
 
-double Matrix::operator()(int row, int col) const { return values_[row * cols_ + col]; }
+double Matrix::operator()(int row, int col) const {
+    return values_[row * cols_ + col];
+}
 
-Vector Matrix::operator[](int row) {
+Vector Matrix::operator[](int row){
     if (row >= 0 && row < rows_) {
         return Vector(values_ + row * cols_, cols_);
     } else {
@@ -110,7 +116,9 @@ std::ostream& Matrix::print(std::ostream& lhs) const {
 
 double* Matrix::get_values() { return values_; }
 
-std::ostream& operator<<(std::ostream& lhs, const Matrix& rhs) { return rhs.print(lhs); }
+std::ostream& operator<<(std::ostream& lhs, const Matrix& rhs) {
+    return rhs.print(lhs);
+}
 
 Matrix operator+(const Matrix& lhs, const Matrix& rhs) {
     Matrix result(lhs);
@@ -124,7 +132,8 @@ Matrix operator-(const Matrix& lhs, const Matrix& rhs) {
 
 Matrix operator*(double factor, const Matrix& rhs) {
     if (rhs.rows() == 0 || rhs.cols() == 0) {
-        std::cerr << "operator*(double , const Matrix &): Size unmatched" << std::endl;
+        std::cerr << "operator*(double , const Matrix &): Size unmatched"
+                  << std::endl;
         exit(1);
     }
     Matrix result(rhs);
@@ -138,7 +147,8 @@ Matrix operator*(double factor, const Matrix& rhs) {
 
 Vector operator*(const Matrix& lhs, const Vector& rhs) {
     if (lhs.cols() != rhs.size() || lhs.rows() == 0) {
-        std::cerr << "operator*(const Matrix &, const Vector &): Size unmatched" << std::endl;
+        std::cerr << "operator*(const Matrix &, const Vector &): Size unmatched"
+                  << std::endl;
         exit(1);
     }
     Vector result(lhs.rows());
@@ -154,7 +164,8 @@ Vector operator*(const Matrix& lhs, const Vector& rhs) {
 // アドレスに直接アクセスすることで処理速度を上げている
 Matrix operator*(Matrix& lhs, Matrix& rhs) {
     if (lhs.cols() != rhs.rows() || lhs.rows() == 0 || rhs.cols() == 0) {
-        std::cerr << "operator*(const Matrix &, const Matrix &): Size unmatched" << std::endl;
+        std::cerr << "operator*(const Matrix &, const Matrix &): Size unmatched"
+                  << std::endl;
         exit(1);
     }
 
@@ -191,8 +202,8 @@ Matrix operator*(Matrix& lhs, Matrix& rhs) {
 /*
 Matrix operator*(const Matrix& lhs, const Matrix& rhs) {
     if (lhs.cols() != rhs.rows() || lhs.rows() == 0 || rhs.cols() == 0) {
-        std::cerr << "operator*(const Matrix &, const Matrix &): Size unmatched" << std::endl;
-        exit(1);
+        std::cerr << "operator*(const Matrix &, const Matrix &): Size unmatched"
+<< std::endl; exit(1);
     }
     Matrix result(lhs.rows(), rhs.cols());
     for (int row = 0; row < result.rows(); row++) {
@@ -239,7 +250,7 @@ bool operator!=(const Matrix& lhs, const Matrix& rhs) {
     return false;
 }
 
-double frobeniusNorm(const Matrix& arg) {
+double frobenius_norm(const Matrix& arg) {
     double result = 0.0;
     for (int row = 0; row < arg.rows(); row++) {
         for (int col = 0; col < arg.cols(); col++) {

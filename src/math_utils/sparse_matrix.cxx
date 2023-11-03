@@ -1,7 +1,5 @@
 #include "sparse_matrix.h"
 
-#include <string.h>
-
 // コンストラクタ
 SparseMatrix::SparseMatrix(int rows, int cols) : rows_(rows), cols_(cols) {
     // 行ポインタ、列インデックス、データを初期化
@@ -71,6 +69,7 @@ SparseMatrix::~SparseMatrix() {
 }
 
 double& SparseMatrix::operator()(int row, int index) { return values_[row_pointers_[row] + index]; }
+double SparseMatrix::operator()(int row, int index) const { return values_[row_pointers_[row] + index]; }
 
 //(i,j,"index") : スパースでi行目，j番目の要素の、スパースではない本来の列番号
 int& SparseMatrix::operator()(int row, int index, const char* s) {
@@ -82,7 +81,7 @@ int& SparseMatrix::operator()(int row, int index, const char* s) {
 }
 
 //(row,s) : row行目の要素数
-const int SparseMatrix::operator()(int row, const char* s) const {
+int SparseMatrix::operator()(int row, const char* s) const {
     if (strcmp(s, "row") != 0) {
         std::cerr << "Invalid string parameter" << std::endl;
         exit(1);

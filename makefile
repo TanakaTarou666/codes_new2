@@ -1,12 +1,13 @@
-CXX = g++
+CXX = g++ -std=c++17 
 CXXFLAGS = -O3 -mtune=native -march=native -mfpmath=both
 #CXXFLAGS =  -g -Wall -Wextra  #debug用
 
 math_utils = src/math_utils/vector.cxx \
             src/math_utils/matrix.cxx \
+			src/math_utils/sparse_vector.cxx \
             src/math_utils/sparse_matrix.cxx \
             src/math_utils/tensor.cxx \
-            src/math_utils/dsd_tensor.cxx
+            src/math_utils/dss_tensor.cxx
 
 # recom_system_base
 normal_recom = src/recom_system_base/recom.cxx $(math_utils)
@@ -24,9 +25,9 @@ tfc_recom = src/recom_system_base/tfc_recom.cxx \
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 # fm
-.out/tfcfm_sgd: src/recom_methods/tfcfm_sgd.cxx main_recom/tfcfm_sgd_main.cxx $(tfc_recom)
+.out/tfcfm_sgd: src/recom_methods/tfcfm_sgd.cxx main_recom/tfcfm_sgd_main.cxx src/recom_system_base/fm_base.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-.out/tfcfm_als: src/recom_methods/tfcfm_als.cxx main_recom/tfcfm_als_main.cxx $(tfc_recom)
+.out/tfcfm_als: src/recom_methods/tfcfm_als.cxx main_recom/tfcfm_als_main.cxx src/recom_system_base/fm_base.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
