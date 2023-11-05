@@ -11,8 +11,9 @@ math_utils = src/math_utils/vector.cxx \
 
 # recom_system_base
 normal_recom = src/recom_system_base/recom.cxx $(math_utils)
-tfc_recom = src/recom_system_base/tfc_recom.cxx \
-            src/recom_system_base/recom.cxx $(math_utils)
+tfc_recom = src/recom_system_base/tfc_recom.cxx $(normal_recom)
+fm_recom = src/recom_system_base/fm_base.cxx $(normal_recom)
+tfcfm_recom = src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.cxx $(normal_recom)
 
 # mf
 .out/mf: src/recom_methods/mf.cxx main_recom/mf_main.cxx $(normal_recom)
@@ -25,15 +26,18 @@ tfc_recom = src/recom_system_base/tfc_recom.cxx \
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 # fm
-.out/tfcfm_sgd: src/recom_methods/tfcfm_sgd.cxx main_recom/tfcfm_sgd_main.cxx src/recom_system_base/fm_base.cxx $(tfc_recom)
+.out/fm_als: src/recom_methods/fm_als.cxx main_recom/fm_als_main.cxx $(fm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-.out/tfcfm_als: src/recom_methods/tfcfm_als.cxx main_recom/tfcfm_als_main.cxx src/recom_system_base/fm_base.cxx $(tfc_recom)
+.out/tfcfm_sgd: src/recom_methods/tfcfm_sgd.cxx main_recom/tfcfm_sgd_main.cxx $(tfcfm_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+.out/tfcfm_als: src/recom_methods/tfcfm_als.cxx main_recom/tfcfm_als_main.cxx $(tfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
 	rm -f .out/mf
 	rm -f .out/tfcmf
 	rm -f .out/tfcwnmf
+	rm -f .out/fm_als
 	rm -f .out/tfcfm_sgd
 	rm -f .out/tfcfm_als
 

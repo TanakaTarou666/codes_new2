@@ -20,7 +20,7 @@
 class Recom {
    private:
     // 欠損のさせ方を決めるシード値
-    int seed_;
+    int seed_=0;
     // 予測値評価
     Vector mae_, auc_;
     Vector tp_fn_, fp_tn_;

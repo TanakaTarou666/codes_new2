@@ -3,9 +3,9 @@
 #define ARTIFICIALITY
 
 const double convergence_criteria = 0.001;
-const int missing_pattern = 5;
-const int num_initial_values = 5;
-const int steps=2000;
+const int missing_pattern = 1;
+const int num_initial_values = 1;
+const int steps=10;
 
 #ifdef ARTIFICIALITY
 const std::string data_name = "artificiality";

@@ -194,5 +194,5 @@ double squared_norm(const Vector& arg) {
     for (int i = 0; i < arg.size(); i++) {
         result += arg[i] * arg[i];
     }
-    return result;
+    return sqrt(result);
 }
