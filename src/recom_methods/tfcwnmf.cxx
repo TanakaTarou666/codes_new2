@@ -17,12 +17,12 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
-    if (num_users > num_items) {
-        latent_dimension_ = std::round(num_items * latent_dimension_percentage / 100);
+    if (rs::num_users > rs::num_items) {
+        latent_dimension_ = std::round(rs::num_items * latent_dimension_percentage / 100);
     } else {
-        latent_dimension_ = std::round(num_users * latent_dimension_percentage / 100);
+        latent_dimension_ = std::round(rs::num_users * latent_dimension_percentage / 100);
     }
-    if (steps < 50) {
+    if (rs::steps < 50) {
         std::cerr << "MF: \"step\" should be 50 or more.";
         return;
     }
@@ -32,8 +32,8 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
     fuzzifier_Lambda_ = fuzzifier_Lambda;
     parameters_ = {(double)cluster_size_, fuzzifier_em_, fuzzifier_Lambda_, (double)latent_dimension_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
-    user_factors_ = Tensor(cluster_size_, num_users, latent_dimension_);
-    item_factors_ = Tensor(cluster_size_, num_items, latent_dimension_);
+    user_factors_ = Tensor(cluster_size_, rs::num_users, latent_dimension_);
+    item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
 }
 
 void TFCWNMF::set_initial_values(int& seed) {
@@ -55,8 +55,8 @@ void TFCWNMF::set_initial_values(int& seed) {
             }
         }
     }
-    membership_ = Matrix(cluster_size_, num_users, 1.0 / (double)cluster_size_);
-    dissimilarities_ = Matrix(cluster_size_, num_users, 0);
+    membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
+    dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
     observation_indicator_ = sparse_missing_data_;
     for (int i = 0; i < user_factors_.rows(); i++) {
         for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
@@ -78,11 +78,11 @@ void TFCWNMF::calculate_factors() {
     SparseMatrix transposed_users_dot_items = transposed_sparse_missing_data_;
 
     for (int c = 0; c < cluster_size_; c++) {
-        double tmp_diagonalMembership[num_users];
-        for (int i = 0; i < num_users; i++) {
+        double tmp_diagonalMembership[rs::num_users];
+        for (int i = 0; i < rs::num_users; i++) {
             tmp_diagonalMembership[i] = pow(membership_[c][i], fuzzifier_em_);
         }
-        SparseMatrix diagonal_membership(num_users, tmp_diagonalMembership, "diag");
+        SparseMatrix diagonal_membership(rs::num_users, tmp_diagonalMembership, "diag");
         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
             for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
                 if (sparse_missing_data_(i, j) != 0) {
@@ -144,7 +144,7 @@ double TFCWNMF::calculate_objective_value() {
     double result;
     double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < num_users; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_[c][i], fuzzifier_em_) * dissimilarities_[c][i];
             +1 / (fuzzifier_Lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_[c][i], fuzzifier_em_) - 1);
         }
@@ -163,7 +163,7 @@ bool TFCWNMF::calculate_convergence_criterion() {
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {
-        if (diff < convergence_criteria) {
+        if (diff < rs::convergence_criteria) {
             result = true;
         }
     } else {

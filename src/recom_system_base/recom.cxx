@@ -1,16 +1,16 @@
 #include "recom.h"
 
 Recom::Recom(int num_missing_value)
-    : tp_fn_((int)max_value * 100, 0.0, "all"),
-      fp_tn_((int)max_value * 100, 0.0, "all"),
+    : tp_fn_((int)rs::max_value * 100, 0.0, "all"),
+      fp_tn_((int)rs::max_value * 100, 0.0, "all"),
       num_missing_value_(num_missing_value),
-      sparse_missing_data_(num_users, num_items),
-      sparse_correct_data_(num_users, num_items),
+      sparse_missing_data_(rs::num_users, rs::num_items),
+      sparse_correct_data_(rs::num_users, rs::num_items),
       missing_data_indices_(num_missing_value, 2),
       prediction_(num_missing_value, 0, "all"),
       sparse_missing_data_cols_(num_missing_value),
-      mae_(missing_pattern),
-      auc_(missing_pattern) {}
+      mae_(rs::missing_pattern),
+      auc_(rs::missing_pattern) {}
 
 void Recom::input(std::string file_name) {
     std::ifstream ifs(file_name);
@@ -19,12 +19,12 @@ void Recom::input(std::string file_name) {
         exit(1);
     }
 
-    int *row_pointers = new int[num_users + 1]();
-    int row_sizes[num_users];
+    int *row_pointers = new int[rs::num_users + 1]();
+    int row_sizes[rs::num_users];
     std::vector<std::vector<double>> correct_data;
     std::vector<std::vector<int>> correct_data_index;
     row_pointers[0] = 0;
-    for (int cnt = 0; cnt < num_users; cnt++) {
+    for (int cnt = 0; cnt < rs::num_users; cnt++) {
         std::vector<int> correct_data_index_row;
         std::vector<double> correct_data_row;
         ifs >> row_sizes[cnt];
@@ -42,10 +42,10 @@ void Recom::input(std::string file_name) {
     ifs.close();
     sparse_correct_data_.set_row_pointers(row_pointers);
 
-    int *col_indices = new int[row_pointers[num_users]]();
-    double *values = new double[row_pointers[num_users]]();
+    int *col_indices = new int[row_pointers[rs::num_users]]();
+    double *values = new double[row_pointers[rs::num_users]]();
     int i = 0;
-    for (int cnt = 0; cnt < num_users; cnt++) {
+    for (int cnt = 0; cnt < rs::num_users; cnt++) {
         for (int ell = 0; ell < row_sizes[cnt]; ell++) {
             col_indices[i] = correct_data_index[cnt][ell];
             values[i] = correct_data[cnt][ell];
@@ -55,7 +55,7 @@ void Recom::input(std::string file_name) {
 
     sparse_correct_data_.set_col_indices(col_indices);
     sparse_correct_data_.set_values(values);
-    sparse_correct_data_.set_nnz(row_pointers[num_users]);
+    sparse_correct_data_.set_nnz(row_pointers[rs::num_users]);
     sparse_missing_data_ = sparse_correct_data_;
 }
 
@@ -66,7 +66,7 @@ void Recom::revise_missing_values(void) {
         /****乱数生成****/
         std::mt19937_64 mt;
         mt.seed(seed_);
-        std::uniform_int_distribution<> randRow(0, num_users - 1);
+        std::uniform_int_distribution<> randRow(0, rs::num_users - 1);
         // ランダムに行番号生成
         tmprow = randRow(mt);
         int col_size = sparse_correct_data_.get_row_pointers()[tmprow + 1] - sparse_correct_data_.get_row_pointers()[tmprow];
@@ -100,20 +100,20 @@ void Recom::revise_missing_values(void) {
 void Recom::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
-    for (int initial_value_index = 0; initial_value_index < num_initial_values; initial_value_index++) {
+    for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
         std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
         set_initial_values(initial_value_index);
         error_detected_ = false;
 #ifndef ARTIFICIALITY
         prev_objective_value_ = DBL_MAX;
 #endif
-        for (int step = 0; step < steps; step++) {
+        for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
             if (calculate_convergence_criterion()) {
                 break;
             }
-            if (step == steps - 1) {
+            if (step == rs::steps - 1) {
                 error_detected_ = true;
                 break;
             }
@@ -122,7 +122,7 @@ void Recom::train() {
         if (error_detected_) {
             error_count++;
             // 初期値全部{NaN出た or step上限回更新して収束しなかった} => 1を返して終了
-            if (error_count == num_initial_values) {
+            if (error_count == rs::num_initial_values) {
                 return;
             }
         } else {
@@ -160,7 +160,7 @@ void Recom::calculate_mae(int current_missing_pattern) {
 }
 
 void Recom::calculate_roc(int current_missing_pattern) {
-    for (int index = 1; index < (int)max_value * 100; index++) {
+    for (int index = 1; index < (int)rs::max_value * 100; index++) {
         double TP = 0.0, FP = 0.0, FN = 0.0, TN = 0.0;
         // 閾値の設定
         double siki = (double)index / 100.0;
@@ -196,7 +196,7 @@ void Recom::calculate_roc(int current_missing_pattern) {
     std::string ROC_STR = dirs_[0] + "/ROC/choice/" + method_name_ + "ROC" + std::to_string(num_missing_value_) + "_" +
                           std::to_string(current_missing_pattern) + "sort.txt";
     // ROCでプロットする点の数
-    int max_index = (int)max_value * 100;
+    int max_index = (int)rs::max_value * 100;
     // 一旦保存
     Vector False = fp_tn_;
     Vector True = tp_fn_;
@@ -246,10 +246,10 @@ void Recom::sort(Vector &fal, Vector &tru, int index) {
 }
 
 void Recom::precision_summury() {
-    int max = (int)max_value * 100;
+    int max = (int)rs::max_value * 100;
     for (int method = 0; method < (int)dirs_.size(); method++) {
         double rocarea = 0.0;
-        for (int x = 0; x < missing_pattern; x++) {
+        for (int x = 0; x < rs::missing_pattern; x++) {
             auc_[x] = 0.0;
             Vector array1(max, 0.0, "all"), array2(max, 0.0, "all");
             std::ifstream ifs(dirs_[method] + "/ROC/choice/" + method_name_ + "ROC" + std::to_string(num_missing_value_) + "_" + std::to_string(x) +
@@ -286,7 +286,7 @@ void Recom::precision_summury() {
             std::cerr << "ファイルopen失敗: choice_mae_f\n";
             exit(1);
         }
-        for (int i = 0; i < missing_pattern; i++) {
+        for (int i = 0; i < rs::missing_pattern; i++) {
             ofs << std::fixed << std::setprecision(10) << mae_[i] << "\t" << auc_[i] << std::endl;
         }
     }
@@ -300,7 +300,7 @@ std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing
     c_p = c_p + "/../../RESULT/" + methods[0];
     mkdir(c_p.c_str(), 0755);
     for (int i = 0; i < (int)methods.size(); i++) {
-        std::string d = c_p + "/" + methods[i] + "_" + data_name + std::to_string(num_missing_value);
+        std::string d = c_p + "/" + methods[i] + "_" + rs::data_name + std::to_string(num_missing_value);
         mkdir(d.c_str(), 0755);
         // ROCフォルダ作成
         const std::string roc = d + "/ROC";
@@ -315,10 +315,10 @@ std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing
 
 std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector<double> parameters, int num_missing_value) {
 #if !defined ARTIFICIALITY
-    if (num_users > num_items) {
-        parameters[0] = std::round(num_items * parameters[0] / 100);
+    if (rs::num_users > rs::num_items) {
+        parameters[0] = std::round(rs::num_items * parameters[0] / 100);
     } else {
-        parameters[0] = std::round(num_users * parameters[0] / 100);
+        parameters[0] = std::round(rs::num_users * parameters[0] / 100);
     }
 #endif
     std::vector<std::string> v;
@@ -326,7 +326,7 @@ std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector
     c_p = c_p + "/../../RESULT/" + dirs[0];
     mkdir(c_p.c_str(), 0755);
     for (int i = 0; i < (int)dirs.size(); i++) {
-        std::string d = c_p + "/" + dirs[i] + "_" + data_name + std::to_string(num_missing_value);
+        std::string d = c_p + "/" + dirs[i] + "_" + rs::data_name + std::to_string(num_missing_value);
         mkdir(d.c_str(), 0755);
         std::string mf_parameters = "";
         for (int i = 0; i < (int)parameters.size(); i++) {

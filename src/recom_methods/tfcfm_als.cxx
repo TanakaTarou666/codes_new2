@@ -9,12 +9,12 @@ void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluste
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
-    if (num_users > num_items) {
-        latent_dimension_ = std::round(num_items * latent_dimension_percentage / 100);
+    if (rs::num_users > rs::num_items) {
+        latent_dimension_ = std::round(rs::num_items * latent_dimension_percentage / 100);
     } else {
-        latent_dimension_ = std::round(num_users * latent_dimension_percentage / 100);
+        latent_dimension_ = std::round(rs::num_users * latent_dimension_percentage / 100);
     }
-    if (steps < 50) {
+    if (rs::steps < 50) {
         std::cerr << "MF: \"step\" should be 50 or more.";
         return;
     }
@@ -28,17 +28,17 @@ void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluste
 
 void TFCFMWithALS::set_initial_values(int &seed) {
     w0_ = Vector(cluster_size_, 0.0, "all");
-    w_ = Matrix(cluster_size_, num_users + num_items, 0.0);
-    v_ = Tensor(cluster_size_, num_users + num_items, latent_dimension_);
+    w_ = Matrix(cluster_size_, rs::num_users + rs::num_items, 0.0);
+    v_ = Tensor(cluster_size_, rs::num_users + rs::num_items, latent_dimension_);
     e_ = Matrix(cluster_size_, sparse_missing_data_.nnz() - num_missing_value_, 0.0);
     q_ = Tensor(cluster_size_, sparse_missing_data_.nnz() - num_missing_value_, latent_dimension_);
-    x_ = DSSTensor(sparse_missing_data_, num_users + num_items);
-    membership_ = Matrix(cluster_size_, num_users, 1.0 / (double)cluster_size_);
-    dissimilarities_ = Matrix(cluster_size_, num_users, 0);
+    x_ = DSSTensor(sparse_missing_data_, rs::num_users + rs::num_items);
+    membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
+    dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
 
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int n = 0; n < num_users + num_items; n++) {
+        for (int n = 0; n < rs::num_users + rs::num_items; n++) {
             for (int k = 0; k < latent_dimension_; k++) {
                 mt.seed(seed);
                 // ランダムに値生成
@@ -48,19 +48,19 @@ void TFCFMWithALS::set_initial_values(int &seed) {
         }
     }
 
-    for (int i = 0; i < num_users; i++) {
+    for (int i = 0; i < rs::num_users; i++) {
         for (int j = 0; j < x_(i, "row"); j++) {
-            SparseVector x_element(num_items, 2);
+            SparseVector x_element(rs::num_items, 2);
             x_element(0) = 1;
             x_element(0, "index") = i;
             x_element(1) = 1;
-            x_element(1, "index") = num_users + x_(i, j, "index");
+            x_element(1, "index") = rs::num_users + x_(i, j, "index");
             x_(i, j) = x_element;
         }
     }
 
     // データ表示
-    // for (int i = 0; i < num_users; i++) {
+    // for (int i = 0; i < rs::num_users; i++) {
     //     for (int j = 0; j < x_(i, "row"); j++) {
     //         std::cout << "i:" << i << " j:" << j << " : " << x_(i, j)
     //                   << std::endl;
@@ -212,7 +212,7 @@ void TFCFMWithALS::calculate_factors() {
 double TFCFMWithALS::calculate_objective_value() {
     double result;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < num_users; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_[c][i], fuzzifier_em_) * dissimilarities_[c][i];
             +1 / (fuzzifier_Lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_[c][i], fuzzifier_em_) - 1);
         }
@@ -235,7 +235,7 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {
-        if (diff < convergence_criteria) {
+        if (diff < rs::convergence_criteria) {
             result = true;
         }
     } else {

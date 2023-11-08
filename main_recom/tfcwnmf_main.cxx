@@ -1,21 +1,16 @@
 #include "../src/recom_methods/tfcwnmf.h"
 
 int main() {
-    double latent_dimensions[] = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-    int cluster_size[] = {2, 4, 5, 8, 9};
-    double fuzzifier_em[] = {1.001};
-    double fuzzifier_Lambda[] = {1000};
 
-    for (int mv = start_missing_valu; mv <= end_missing_valu; mv += step_missing_valu) {
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         TFCWNMF recom(mv);
-        recom.input(input_data_name);
-        for (double ld : latent_dimensions) {
-            for (int c : cluster_size) {
-                for (double em : fuzzifier_em) {
-                    for (double lambda : fuzzifier_Lambda) {
+        recom.input(rs::input_data_name);
+        for (double ld : rs::latent_dimensions) {
+            for (int c : rs::cluster_size) {
+                for (double em : rs::fuzzifier_em) {
+                    for (double lambda : rs::fuzzifier_Lambda) {
                         recom.set_parameters(ld, c, em, lambda);
-                    }
-                    for (int i = 0; i < missing_pattern; i++) {
+                    for (int i = 0; i < rs::missing_pattern; i++) {
                         // データを欠損
                         recom.revise_missing_values();
                         recom.train();
@@ -24,6 +19,7 @@ int main() {
                     }
                     // 指標値の計算 シード値のリセット
                     recom.precision_summury();
+                    }
                 }
             }
         }

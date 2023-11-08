@@ -1,11 +1,11 @@
 #include "../src/recom_methods/fm_als.h"
 
 int main() {
-    for (int mv = start_missing_valu; mv <= end_missing_valu; mv += step_missing_valu) {
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         FMWithALS recom(mv);
-        recom.input(input_data_name);
+        recom.input(rs::input_data_name);
         recom.set_parameters(5, 0.001);
-        for (int i = 0; i < missing_pattern; i++) {
+        for (int i = 0; i < rs::missing_pattern; i++) {
             // データを欠損
             recom.revise_missing_values();
             recom.train();

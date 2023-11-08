@@ -8,12 +8,12 @@ void MF::set_parameters(double latent_dimension_percentage, double learning_rate
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
-    if (num_users > num_items) {
-        latent_dimension_ = std::round(num_items * latent_dimension_percentage / 100);
+    if (rs::num_users > rs::num_items) {
+        latent_dimension_ = std::round(rs::num_items * latent_dimension_percentage / 100);
     } else {
-        latent_dimension_ = std::round(num_users * latent_dimension_percentage / 100);
+        latent_dimension_ = std::round(rs::num_users * latent_dimension_percentage / 100);
     }
-    if (steps < 50) {
+    if (rs::steps < 50) {
         std::cerr << "MF: \"step\" should be 50 or more.";
         return;
     }
@@ -22,8 +22,8 @@ void MF::set_parameters(double latent_dimension_percentage, double learning_rate
     learning_rate_ = learning_rate;
     parameters_ = {(double)latent_dimension_, reg_parameter_, learning_rate_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
-    user_factors_ = Matrix(num_users, latent_dimension_);
-    item_factors_ = Matrix(num_items, latent_dimension_);
+    user_factors_ = Matrix(rs::num_users, latent_dimension_);
+    item_factors_ = Matrix(rs::num_items, latent_dimension_);
     return;
 }
 
@@ -49,6 +49,7 @@ void MF::set_initial_values(int &seed) {
 void MF::calculate_factors() {
     prev_item_factors_ = item_factors_;
     prev_user_factors_ = user_factors_;
+    
     user_factor_values_ = user_factors_.get_values();
     for (int i = 0; i < user_factors_.rows(); i++) {
         for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
@@ -114,7 +115,7 @@ bool MF::calculate_convergence_criterion() {
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {
-        if (diff < convergence_criteria) {
+        if (diff < rs::convergence_criteria) {
             result = true;
         }
     } else {

@@ -10,12 +10,12 @@ void TFCMF::set_parameters(double latent_dimension_percentage, int cluster_size,
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
-    if (num_users > num_items) {
-        latent_dimension_ = std::round(num_items * latent_dimension_percentage / 100);
+    if (rs::num_users > rs::num_items) {
+        latent_dimension_ = std::round(rs::num_items * latent_dimension_percentage / 100);
     } else {
-        latent_dimension_ = std::round(num_users * latent_dimension_percentage / 100);
+        latent_dimension_ = std::round(rs::num_users * latent_dimension_percentage / 100);
     }
-    if (steps < 50) {
+    if (rs::steps < 50) {
         std::cerr << "MF: \"step\" should be 50 or more.";
         return;
     }
@@ -27,8 +27,8 @@ void TFCMF::set_parameters(double latent_dimension_percentage, int cluster_size,
     fuzzifier_Lambda_ = fuzzifier_Lambda;
     parameters_ = {(double)latent_dimension_,(double)cluster_size_, fuzzifier_em_, fuzzifier_Lambda_, reg_parameter_, learning_rate_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
-    user_factors_ = Tensor(cluster_size_, num_users, latent_dimension_);
-    item_factors_ = Tensor(cluster_size_, num_items, latent_dimension_);
+    user_factors_ = Tensor(cluster_size_, rs::num_users, latent_dimension_);
+    item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
 }
 
 void TFCMF::calculate_factors() {
@@ -90,22 +90,22 @@ void TFCMF::set_initial_values(int &seed) {
             }
         }
     }
-    membership_ = Matrix(cluster_size_, num_users, 1.0 / (double)cluster_size_);
-    dissimilarities_ = Matrix(cluster_size_, num_users, 0);
+    membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
+    dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
 }
 
 double TFCMF::calculate_objective_value() {
     double result=0;
     double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < num_users; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_[c][i], fuzzifier_em_) * dissimilarities_[c][i];
             +1 / (fuzzifier_Lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_[c][i], fuzzifier_em_) - 1);
         }
-        for (int i = 0; i < num_users; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             user_factors__L2Norm += user_factors_[c][i] * user_factors_[c][i];
         }
-        for (int j = 0; j < num_items; j++) {
+        for (int j = 0; j < rs::num_items; j++) {
             item_factors__L2Norm += item_factors_[c][j] * item_factors_[c][j];
         }
     }
@@ -123,7 +123,7 @@ bool TFCMF::calculate_convergence_criterion() {
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {
-        if (diff < convergence_criteria) {
+        if (diff < rs::convergence_criteria) {
             result = true;
         }
     } else {

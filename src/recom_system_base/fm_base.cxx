@@ -28,7 +28,7 @@ double FMBase::predict_y(SparseVector &x, double w0, Vector w, Matrix &v) {
 void FMBase::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
-    for (int initial_value_index = 0; initial_value_index < num_initial_values; initial_value_index++) {
+    for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
         std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
         set_initial_values(initial_value_index);
         error_detected_ = false;
@@ -36,7 +36,7 @@ void FMBase::train() {
         prev_objective_value_ = DBL_MAX;
 #endif
         precompute();
-        for (int step = 0; step < steps; step++) {
+        for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             std::cout << "step:" << step << "\t"
                       << "objective_value:" << calculate_objective_value() << "\t";
@@ -45,7 +45,7 @@ void FMBase::train() {
             if (calculate_convergence_criterion()) {
                 break;
             }
-            if (step == steps - 1) {
+            if (step == rs::steps - 1) {
                 error_detected_ = true;
                 break;
             }
@@ -54,7 +54,7 @@ void FMBase::train() {
         if (error_detected_) {
             error_count++;
             // 初期値全部{NaN出た or step上限回更新して収束しなかった} =>
-            if (error_count == num_initial_values) {
+            if (error_count == rs::num_initial_values) {
                 return;
             }
         } else {
