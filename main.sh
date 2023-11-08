@@ -1,4 +1,4 @@
-files=("mf" "tfcmf")
+files=("mf" "tfcmf" "tfcwnmf")
 
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行

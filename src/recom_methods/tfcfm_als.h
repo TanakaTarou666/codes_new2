@@ -14,11 +14,10 @@ class TFCFMWithALS : virtual public FMBase, virtual public TFCRecom{
    public:
     TFCFMWithALS(int missing_count);
     void set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
-    void train() override;
-    void set_initial_values(int &seed);
-    void precompute();
-    void calculate_Wo_w_v();
-    double calculate_objective_value();
-    bool calculate_convergence_criterion();
-    void calculate_prediction();
+    void set_initial_values(int &seed) override;
+    void precompute() override;
+    void calculate_factors() override;
+    double calculate_objective_value() override;
+    bool calculate_convergence_criterion() override;
+    void calculate_prediction() override;
 };

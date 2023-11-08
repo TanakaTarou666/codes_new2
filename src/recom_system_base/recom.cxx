@@ -12,8 +12,6 @@ Recom::Recom(int num_missing_value)
       mae_(missing_pattern),
       auc_(missing_pattern) {}
 
-void Recom::train() { return; }
-
 void Recom::input(std::string file_name) {
     std::ifstream ifs(file_name);
     if (!ifs) {
@@ -84,25 +82,73 @@ void Recom::revise_missing_values(void) {
             // 要素を0にする
             sparse_missing_data_(tmprow, tmpcol) = 0;
             // 欠損した行番号を保存
-            missing_data_indices_(m,0) = tmprow;
+            missing_data_indices_(m, 0) = tmprow;
             // 欠損した列番号を保存
-            missing_data_indices_(m,1) = sparse_missing_data_(tmprow, tmpcol, "index");
+            missing_data_indices_(m, 1) = sparse_missing_data_(tmprow, tmpcol, "index");
             // スパースデータの列番号を保存
             sparse_missing_data_cols_[m] = tmpcol;
             m++;
         }
         seed_++;
     }
-    sparse_missing_data_values_=sparse_missing_data_.get_values();
-    sparse_missing_data_row_pointers_=sparse_missing_data_.get_row_pointers();
-    sparse_missing_data_col_indices_=sparse_missing_data_.get_col_indices();
+    sparse_missing_data_values_ = sparse_missing_data_.get_values();
+    sparse_missing_data_row_pointers_ = sparse_missing_data_.get_row_pointers();
+    sparse_missing_data_col_indices_ = sparse_missing_data_.get_col_indices();
     return;
 }
+
+void Recom::train() {
+    int error_count = 0;
+    double best_objective_value = DBL_MAX;
+    for (int initial_value_index = 0; initial_value_index < num_initial_values; initial_value_index++) {
+        std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
+        set_initial_values(initial_value_index);
+        error_detected_ = false;
+#ifndef ARTIFICIALITY
+        prev_objective_value_ = DBL_MAX;
+#endif
+        for (int step = 0; step < steps; step++) {
+            calculate_factors();
+            // 収束条件
+            if (calculate_convergence_criterion()) {
+                break;
+            }
+            if (step == steps - 1) {
+                error_detected_ = true;
+                break;
+            }
+        }
+
+        if (error_detected_) {
+            error_count++;
+            // 初期値全部{NaN出た or step上限回更新して収束しなかった} => 1を返して終了
+            if (error_count == num_initial_values) {
+                return;
+            }
+        } else {
+            double objective_value = calculate_objective_value();
+            if (objective_value < best_objective_value) {
+                best_objective_value = objective_value;
+                calculate_prediction();
+            }
+        }
+    }
+}
+
+void Recom::set_initial_values(int &seed) {}
+
+void Recom::calculate_factors() { return; }
+
+double Recom::calculate_objective_value() { return 0; }
+
+bool Recom::calculate_convergence_criterion() { return false; }
+
+void Recom::calculate_prediction() { return; }
 
 void Recom::calculate_mae(int current_missing_pattern) {
     double result = 0.0;
     for (int m = 0; m < num_missing_value_; m++) {
-        result += fabs(sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m]) - prediction_[m]);
+        result += fabs(sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m]) - prediction_[m]);
     }
     mae_[current_missing_pattern] = result / (double)num_missing_value_;
 
@@ -120,15 +166,15 @@ void Recom::calculate_roc(int current_missing_pattern) {
         double siki = (double)index / 100.0;
         for (int m = 0; m < num_missing_value_; m++) {
             // 正解値が閾値以上かつ，予測値が閾値以上場合
-            if ((siki <= sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m])) TP += 1.0;
+            if ((siki <= sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m])) TP += 1.0;
             // 正解値が閾値を下回ったかつ，予測値が閾値上回った場合
-            else if ((siki > sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m]))
+            else if ((siki > sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m])) && (siki <= prediction_[m]))
                 FP += 1.0;
             // 正解値が閾値上回ったかつ，予測値が閾値を下回った場合
-            else if ((siki <= sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
+            else if ((siki <= sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
                 FN += 1.0;
             // それ以外
-            else if ((siki > sparse_correct_data_(missing_data_indices_(m,0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
+            else if ((siki > sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m])) && (siki > prediction_[m]))
                 TN += 1.0;
             else
                 continue;
@@ -147,7 +193,8 @@ void Recom::calculate_roc(int current_missing_pattern) {
             }
         }
     }
-    std::string ROC_STR = dirs_[0] + "/ROC/choice/" + method_name_ + "ROC" + std::to_string(num_missing_value_) + "_" + std::to_string(current_missing_pattern) + "sort.txt";
+    std::string ROC_STR = dirs_[0] + "/ROC/choice/" + method_name_ + "ROC" + std::to_string(num_missing_value_) + "_" +
+                          std::to_string(current_missing_pattern) + "sort.txt";
     // ROCでプロットする点の数
     int max_index = (int)max_value * 100;
     // 一旦保存
@@ -243,7 +290,7 @@ void Recom::precision_summury() {
             ofs << std::fixed << std::setprecision(10) << mae_[i] << "\t" << auc_[i] << std::endl;
         }
     }
-    seed_=0;
+    seed_ = 0;
     return;
 }
 
@@ -267,13 +314,7 @@ std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing
 }
 
 std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector<double> parameters, int num_missing_value) {
-#if defined ARTIFICIALITY
-    if (num_users > num_items) {
-        parameters[0] = std::round(num_items * parameters[0] / 100);
-    } else {
-        parameters[0] = std::round(num_users * parameters[0] / 100);
-    }
-#else
+#if !defined ARTIFICIALITY
     if (num_users > num_items) {
         parameters[0] = std::round(num_items * parameters[0] / 100);
     } else {

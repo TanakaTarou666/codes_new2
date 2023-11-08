@@ -6,4 +6,6 @@ class FMBase : virtual public Recom {
    public:
     FMBase(int missing_count);
     double predict_y(SparseVector &x, double w0, Vector w, Matrix &v);
+    virtual void precompute();
+    void train() override;
 };

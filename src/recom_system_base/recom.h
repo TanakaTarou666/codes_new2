@@ -51,9 +51,15 @@ class Recom {
    public:
     // ユーザ数，アイテム数，欠損数，欠損パターン
     Recom(int num_missing_value);
-    virtual void train();
     void input(std::string);
     void revise_missing_values(void);
+    //実際の計算
+    virtual void train();
+    virtual void set_initial_values(int &seed);
+    virtual void calculate_factors();
+    virtual double calculate_objective_value();
+    virtual bool calculate_convergence_criterion();
+    virtual void calculate_prediction();
     // MAEの計算，textに保存
     void calculate_mae(int current_missing_pattern);
     // ROCで必要な値をtextに保存

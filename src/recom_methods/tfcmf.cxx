@@ -31,46 +31,7 @@ void TFCMF::set_parameters(double latent_dimension_percentage, int cluster_size,
     item_factors_ = Tensor(cluster_size_, num_items, latent_dimension_);
 }
 
-void TFCMF::train() {
-    int error_count = 0;
-    double best_objective_value = DBL_MAX;
-    for (int initial_value_index = 0; initial_value_index < num_initial_values; initial_value_index++) {
-        std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
-        set_initial_values(initial_value_index);
-        error_detected_ = false;
-#ifndef ARTIFICIALITY
-        prev_objective_value_ = DBL_MAX;
-#endif
-        for (int step = 0; step < steps; step++) {
-            calculate_user_item_factors();
-            // 収束条件
-            if (calculate_convergence_criterion()) {
-                std::cout << step <<std::endl;
-                break;
-            }
-            if (step == steps - 1) {
-                error_detected_ = true;
-                break;
-            }
-        }
-
-        if (error_detected_) {
-            error_count++;
-            // 初期値全部{NaN出た or step上限回更新して収束しなかった} => 1を返して終了
-            if (error_count == num_initial_values) {
-                return;
-            }
-        } else {
-            double objective_value = calculate_objective_value();
-            if (objective_value < best_objective_value) {
-                best_objective_value = objective_value;
-                calculate_prediction();
-            }
-        }
-    }
-}
-
-void TFCMF::calculate_user_item_factors() {
+void TFCMF::calculate_factors() {
     prev_item_factors_ = item_factors_;
     prev_user_factors_ = user_factors_;
     for (int c = 0; c < cluster_size_; c++) {
@@ -106,6 +67,7 @@ void TFCMF::calculate_user_item_factors() {
             }
         }
     }
+    
     calculate_membership();
 }
 

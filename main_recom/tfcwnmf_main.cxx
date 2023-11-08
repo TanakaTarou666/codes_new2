@@ -1,8 +1,8 @@
 #include "../src/recom_methods/tfcwnmf.h"
 
 int main() {
-    double latent_dimensions[] = {5.0};
-    int cluster_size[] = {5};
+    double latent_dimensions[] = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+    int cluster_size[] = {2, 4, 5, 8, 9};
     double fuzzifier_em[] = {1.001};
     double fuzzifier_Lambda[] = {1000};
 

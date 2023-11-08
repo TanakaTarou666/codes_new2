@@ -15,10 +15,9 @@ class TFCWNMF : virtual public TFCRecom {
    public:
     TFCWNMF(int missing_pattern);
     void set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
-    void train() override;
-    void calculate_user_item_factors();
-    void set_initial_values(int &seed);
-    double calculate_objective_value();
-    bool calculate_convergence_criterion();
-    void calculate_prediction();
+    void calculate_factors() override;
+    void set_initial_values(int &seed) override;
+    double calculate_objective_value() override;
+    bool calculate_convergence_criterion() override;
+    void calculate_prediction() override;
 };

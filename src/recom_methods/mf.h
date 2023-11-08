@@ -14,15 +14,13 @@ class MF : virtual public Recom {
     Matrix user_factors_, item_factors_;
     Matrix prev_user_factors_, prev_item_factors_;
     double *user_factor_values_,*item_factor_values_;
-    
 
    public:
     MF(int missing_count);
     void set_parameters(double latent_dimension_percentage, double learning_rate, double reg_parameter);
-    void train() override;
-    void calculate_user_item_factors();
-    void set_initial_values(int &seed);
-    double calculate_objective_value();
-    bool calculate_convergence_criterion();
-    void calculate_prediction();
+    void calculate_factors() override;
+    void set_initial_values(int &seed) override;
+    double calculate_objective_value() override;
+    bool calculate_convergence_criterion() override;
+    void calculate_prediction() override;
 };
