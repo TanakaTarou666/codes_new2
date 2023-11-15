@@ -61,6 +61,31 @@ void TFCFMWithSGD::set_initial_values(int &seed) {
         }
     }
 
+    for (int k = 0; k < rs::num_users; k++) {
+        double tmp_Mem[cluster_size_];
+        tmp_Mem[cluster_size_ - 1] = 1.0;
+        for (int i = 0; i < cluster_size_ - 1; i++) {
+            mt.seed(seed);
+            std::uniform_real_distribution<> rand_p(0.01, 1.0 / (double)cluster_size_);
+            tmp_Mem[i] = rand_p(mt);
+            tmp_Mem[cluster_size_ - 1] -= tmp_Mem[i];
+            seed++;
+        }
+        // [0, 99] 範囲の一様乱数
+        for (int i = 0; i < cluster_size_; i++) {
+            mt.seed(seed);
+            std::uniform_int_distribution<> rand100(0, 99);
+            int r = rand100(mt) % (1 + i);
+            double tmp = tmp_Mem[i];
+            tmp_Mem[i] = tmp_Mem[r];
+            tmp_Mem[r] = tmp;
+            seed++;
+        }
+        for (int i = 0; i < cluster_size_; i++) {
+            membership_(i,k) = tmp_Mem[i];
+        }
+    }
+
     // データ表示
     // for (int i = 0; i < rs::num_users; i++) {
     //     for (int j = 0; j < x_(i, "row"); j++) {

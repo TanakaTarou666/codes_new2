@@ -29,7 +29,7 @@ void FMBase::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
     for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
-        std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
+        std::cout << method_name_ << ": initial setting " << initial_value_index;
         set_initial_values(initial_value_index);
         error_detected_ = false;
 #ifndef ARTIFICIALITY
@@ -38,11 +38,13 @@ void FMBase::train() {
         precompute();
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
-            std::cout << "step:" << step << "\t"
-                      << "objective_value:" << calculate_objective_value() << "\t";
-            std::cout << std::endl;
             // 収束条件
             if (calculate_convergence_criterion()) {
+                std::cout <<  ": step: " << step;
+                break;
+            }
+            if (step==2000) {
+                std::cout <<  ": step: " << step;
                 break;
             }
             if (step == rs::steps - 1) {
@@ -50,10 +52,11 @@ void FMBase::train() {
                 break;
             }
         }
+        std::cout << std::endl;
 
         if (error_detected_) {
             error_count++;
-            // 初期値全部{NaN出た or step上限回更新して収束しなかった} =>
+            // 初期値全部{NaN出た or step上限回更新して収束しなかった} => 1を返して終了
             if (error_count == rs::num_initial_values) {
                 return;
             }
@@ -65,6 +68,7 @@ void FMBase::train() {
             }
         }
     }
+    return;
 }
 
 void FMBase::precompute(){return;}

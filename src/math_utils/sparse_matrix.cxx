@@ -74,7 +74,7 @@ double SparseMatrix::operator()(int row, int index) const { return values_[row_p
 //(i,j,"index") : スパースでi行目，j番目の要素の、スパースではない本来の列番号
 int& SparseMatrix::operator()(int row, int index, const char* s) {
     if (strcmp(s, "index") != 0) {
-        std::cerr << "Invalid string parameter" << std::endl;
+        std::cerr << "Invalid string parameter!" << std::endl;
         exit(1);
     }
     return col_indices_[row_pointers_[row] + index];
@@ -83,7 +83,7 @@ int& SparseMatrix::operator()(int row, int index, const char* s) {
 //(row,s) : row行目の要素数
 int SparseMatrix::operator()(int row, const char* s) const {
     if (strcmp(s, "row") != 0) {
-        std::cerr << "Invalid string parameter" << std::endl;
+        std::cerr << "Invalid string parameter!!" << std::endl;
         exit(1);
     }
     int result = row_pointers_[row + 1] - row_pointers_[row];
@@ -169,19 +169,15 @@ Matrix SparseMatrix::operator*(Matrix& arg) {
     int* dataAcolindices = (*this).get_col_indices();
     double* dataB = arg.get_values();
     double* dataResult = result.get_values();
-    int k = 0;
 
-    for (int i = 0; i < numRowsResult; ++i) {
-        for (int j = 0; j < numColsResult; ++j) {
-            dataResult[i * numColsResult + j] = 0.0;
+    for (int i = 0; i < rows_; i++) {
+        for (int j = 0; j < arg.cols(); j++) {
+            result(i,j) = 0.0;
         }
-        while (k < dataArowpointers[i + 1]) {
-            for (int j = 0; j < numColsResult; ++j) {
-                dataResult[i * numColsResult + j] += *dataA * dataB[*dataAcolindices * numColsResult + j];
+        for (int k = 0; k < (*this)(i,"row"); k++) {
+            for (int j = 0; j < arg.cols(); j++) {
+                result(i,j) += (*this)(i,k) * arg[(*this)(i,k,"index")][j];
             }
-            k++;
-            dataAcolindices++;
-            dataA++;
         }
     }
 

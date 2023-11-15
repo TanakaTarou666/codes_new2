@@ -1,5 +1,5 @@
-#include "../math_utils/dss_tensor.h"
-#include "../recom_system_base/fm_base.h"
+#include "../../math_utils/dss_tensor.h"
+#include "../../recom_system_base/fm_base.h"
 
 class FMWithALS : virtual public FMBase {
    protected:
@@ -15,7 +15,7 @@ class FMWithALS : virtual public FMBase {
    public:
     FMWithALS(int missing_count);
     void set_parameters(double latent_dimension_percentage,double reg_parameter);
-    void set_initial_values(int &seed) override;
+    void set_initial_values(int seed) override;
     void precompute() override;
     void calculate_factors() override;
     double calculate_objective_value() override;

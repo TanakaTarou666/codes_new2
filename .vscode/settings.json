@@ -66,7 +66,9 @@
         "__nullptr": "cpp",
         "__locale": "cpp",
         "__config": "cpp",
-        "__bit_reference": "cpp"
+        "__bit_reference": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

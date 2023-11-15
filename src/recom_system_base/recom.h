@@ -55,7 +55,7 @@ class Recom {
     void revise_missing_values(void);
     //実際の計算
     virtual void train();
-    virtual void set_initial_values(int &seed);
+    virtual void set_initial_values(int seed);
     virtual void calculate_factors();
     virtual double calculate_objective_value();
     virtual bool calculate_convergence_criterion();
@@ -73,5 +73,7 @@ class Recom {
 std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing_value);
 // 結果を出力するフォルダを作成
 std::vector<std::string> mkdir_result(std::vector<std::string> dirs,std::vector<double> parameters, int num_missing_value);
+
+std::string append_current_time_if_test(std::string method);
 
 #endif

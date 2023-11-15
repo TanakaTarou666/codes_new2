@@ -1,6 +1,6 @@
-#include "../math_utils/dss_tensor.h"
-#include "../recom_system_base/tfc_recom.h"
-#include "../recom_system_base/fm_base.h"
+#include "../../math_utils/dss_tensor.h"
+#include "../../recom_system_base/tfc_recom.h"
+#include "../../recom_system_base/fm_base.h"
 
 class TFCFMWithALS : virtual public FMBase, virtual public TFCRecom{
    protected:
@@ -14,7 +14,7 @@ class TFCFMWithALS : virtual public FMBase, virtual public TFCRecom{
    public:
     TFCFMWithALS(int missing_count);
     void set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
-    void set_initial_values(int &seed) override;
+    void set_initial_values(int seed) override;
     void precompute() override;
     void calculate_factors() override;
     double calculate_objective_value() override;

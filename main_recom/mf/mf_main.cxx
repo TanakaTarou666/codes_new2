@@ -1,4 +1,4 @@
-#include "../src/recom_methods/mf.h"
+#include "../../src/recom_methods/mf/mf.h"
 
 int main() {
     // 時間計測

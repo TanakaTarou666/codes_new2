@@ -24,7 +24,8 @@ void FMWithALS::set_parameters(double latent_dimension_percentage, double reg_pa
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
 }
 
-void FMWithALS::set_initial_values(int &seed) {
+void FMWithALS::set_initial_values(int seed) {
+    seed *= 1000000;
     w0_ = 0.0;
     w_ = Vector(rs::num_users + rs::num_items, 0.0, "all");
     v_ = Matrix(rs::num_users + rs::num_items, latent_dimension_);
@@ -37,7 +38,7 @@ void FMWithALS::set_initial_values(int &seed) {
         for (int k = 0; k < latent_dimension_; k++) {
             mt.seed(seed);
             // ランダムに値生成
-            std::uniform_real_distribution<> rand_v(0.0, 0.001);
+            std::uniform_real_distribution<> rand_v(-0.01, 0.01);
             v_(n, k) = rand_v(mt);
             //v_(n, k) = 0.01 * k + 0.01 * n;
             seed++;
@@ -80,7 +81,7 @@ void FMWithALS::precompute() {
             }
         }
     }
-    std::cout << q_[80] << std::endl;
+    //std::cout << q_[80] << std::endl;
 }
 
 void FMWithALS::calculate_factors() {
@@ -198,7 +199,7 @@ bool FMWithALS::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = abs(prev_w0_ - w0_) + squared_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_);
-    std::cout << "diff:" << diff << "\t" << std::endl;
+    //std::cout << "diff:" << diff << "\t" << std::endl;
     // std::cout << "w0:" << w0_ << std::endl;
     // std::cout << "w:" << w_ << std::endl;
     // std::cout << "v:" << v_ << std::endl;

@@ -1,4 +1,4 @@
-#include "../recom_system_base/recom.h"
+#include "../../recom_system_base/recom.h"
 
 class MF : virtual public Recom {
    private:
@@ -19,7 +19,7 @@ class MF : virtual public Recom {
     MF(int missing_count);
     void set_parameters(double latent_dimension_percentage, double learning_rate, double reg_parameter);
     void calculate_factors() override;
-    void set_initial_values(int &seed) override;
+    void set_initial_values(int seed) override;
     double calculate_objective_value() override;
     bool calculate_convergence_criterion() override;
     void calculate_prediction() override;

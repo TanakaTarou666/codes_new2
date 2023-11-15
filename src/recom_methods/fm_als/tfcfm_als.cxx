@@ -26,7 +26,8 @@ void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluste
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
 }
 
-void TFCFMWithALS::set_initial_values(int &seed) {
+void TFCFMWithALS::set_initial_values(int seed) {
+    seed *= 1000000;
     w0_ = Vector(cluster_size_, 0.0, "all");
     w_ = Matrix(cluster_size_, rs::num_users + rs::num_items, 0.0);
     v_ = Tensor(cluster_size_, rs::num_users + rs::num_items, latent_dimension_);
@@ -56,6 +57,31 @@ void TFCFMWithALS::set_initial_values(int &seed) {
             x_element(1) = 1;
             x_element(1, "index") = rs::num_users + x_(i, j, "index");
             x_(i, j) = x_element;
+        }
+    }
+
+    for (int k = 0; k < rs::num_users; k++) {
+        double tmp_Mem[cluster_size_];
+        tmp_Mem[cluster_size_ - 1] = 1.0;
+        for (int i = 0; i < cluster_size_ - 1; i++) {
+            mt.seed(seed);
+            std::uniform_real_distribution<> rand_p(0.01, 1.0 / (double)cluster_size_);
+            tmp_Mem[i] = rand_p(mt);
+            tmp_Mem[cluster_size_ - 1] -= tmp_Mem[i];
+            seed++;
+        }
+        // [0, 99] 範囲の一様乱数
+        for (int i = 0; i < cluster_size_; i++) {
+            mt.seed(seed);
+            std::uniform_int_distribution<> rand100(0, 99);
+            int r = rand100(mt) % (1 + i);
+            double tmp = tmp_Mem[i];
+            tmp_Mem[i] = tmp_Mem[r];
+            tmp_Mem[r] = tmp;
+            seed++;
+        }
+        for (int i = 0; i < cluster_size_; i++) {
+            membership_(i,k) = tmp_Mem[i];
         }
     }
 
@@ -225,10 +251,10 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
 #if defined ARTIFICIALITY
     double diff =
         squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) + frobenius_norm(prev_membership_ - membership_);
-    std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << std::endl;
-    std::cout << "w:" << frobenius_norm(prev_w_ - w_) << std::endl;
-    std::cout << "v:" << frobenius_norm(prev_v_ - v_) << std::endl;
-    std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << std::endl;
+    // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << std::endl;
+    // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << std::endl;
+    // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << std::endl;
+    // std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;

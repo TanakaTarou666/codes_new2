@@ -9,8 +9,8 @@ void TFCRecom::calculate_membership() {
             if (dissimilarities_(c,i) != 0.0) {
                 double denominator = 0.0;
                 for (int j = 0; j < cluster_size_; j++) {
-                    denominator += pow((1 - fuzzifier_Lambda_ * (1 - fuzzifier_em_) * dissimilarities_[c][i]) /
-                                           (1 - fuzzifier_Lambda_ * (1 - fuzzifier_em_) * dissimilarities_[j][i]),
+                    denominator += pow((1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(c,i)) /
+                                           (1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(j,i)),
                                        1.0 / (fuzzifier_em_ - 1));
                 }
                 membership_(c,i)= 1.0 / denominator;

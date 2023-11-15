@@ -36,7 +36,8 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
     item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
 }
 
-void TFCWNMF::set_initial_values(int& seed) {
+void TFCWNMF::set_initial_values(int seed) {
+    seed *= 1000000;
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
         for (int k_i = 0; k_i < user_factors_.cols(); k_i++) {
@@ -57,6 +58,30 @@ void TFCWNMF::set_initial_values(int& seed) {
     }
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
+    for (int k = 0; k < rs::num_users; k++) {
+        double tmp_Mem[cluster_size_];
+        tmp_Mem[cluster_size_ - 1] = 1.0;
+        for (int i = 0; i < cluster_size_ - 1; i++) {
+            mt.seed(seed);
+            std::uniform_real_distribution<> rand_p(0.01, 1.0 / (double)cluster_size_);
+            tmp_Mem[i] = rand_p(mt);
+            tmp_Mem[cluster_size_ - 1] -= tmp_Mem[i];
+            seed++;
+        }
+        // [0, 99] 範囲の一様乱数
+        for (int i = 0; i < cluster_size_; i++) {
+            mt.seed(seed);
+            std::uniform_int_distribution<> rand100(0, 99);
+            int r = rand100(mt) % (1 + i);
+            double tmp = tmp_Mem[i];
+            tmp_Mem[i] = tmp_Mem[r];
+            tmp_Mem[r] = tmp;
+            seed++;
+        }
+        for (int i = 0; i < cluster_size_; i++) {
+            membership_(i,k) = tmp_Mem[i];
+        }
+    }
     observation_indicator_ = sparse_missing_data_;
     for (int i = 0; i < user_factors_.rows(); i++) {
         for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {

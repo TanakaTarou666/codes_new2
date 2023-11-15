@@ -101,7 +101,7 @@ void Recom::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
     for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
-        std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
+        std::cout << method_name_ << ": initial setting " << initial_value_index ;
         set_initial_values(initial_value_index);
         error_detected_ = false;
 #ifndef ARTIFICIALITY
@@ -111,13 +111,16 @@ void Recom::train() {
             calculate_factors();
             // 収束条件
             if (calculate_convergence_criterion()) {
+                std::cout <<  ": step: " << step << std::endl;
                 break;
             }
             if (step == rs::steps - 1) {
                 error_detected_ = true;
+                std::cout <<  ": step: " << step << " error"<<std::endl;
                 break;
             }
         }
+        
 
         if (error_detected_) {
             error_count++;
@@ -133,9 +136,10 @@ void Recom::train() {
             }
         }
     }
+    return;
 }
 
-void Recom::set_initial_values(int &seed) {}
+void Recom::set_initial_values(int seed) {}
 
 void Recom::calculate_factors() { return; }
 
@@ -350,4 +354,16 @@ std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector
         v.push_back(d);
     }
     return v;
+}
+
+std::string append_current_time_if_test(std::string method){
+    #if defined TEST
+    // 現在の日付と時間を取得
+    time_t now = time(0);
+    tm* timeinfo = localtime(&now);
+    // 月、日、時、分を文字列に変換
+    char dateTimeStr[20];
+    strftime(dateTimeStr, sizeof(dateTimeStr), "%m%d-%H%M", timeinfo);
+    #endif
+    return method+ "-" + std::string(dateTimeStr);
 }
