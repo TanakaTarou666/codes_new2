@@ -157,6 +157,7 @@ bool TFCMF::calculate_convergence_criterion() {
 #if defined ARTIFICIALITY
     double diff = frobenius_norm(prev_user_factors_ - user_factors_) + frobenius_norm(prev_item_factors_ - item_factors_) +
                   frobenius_norm(prev_membership_ - membership_);
+                  std::cout<<" diff:" <<diff << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;

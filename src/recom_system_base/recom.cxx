@@ -110,6 +110,7 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
+            std::cout << ": step: " << step;
             if (calculate_convergence_criterion()) {
                 std::cout << ": step: " << step << std::endl;
                 break;

@@ -3,24 +3,21 @@
 #include <cmath>
 #include <iostream>
 
-Tensor::Tensor(int heights, int rows, int cols)
-    : heights_(heights), rows_(rows), cols_(cols) {
+Tensor::Tensor(int heights, int rows, int cols) : heights_(heights), rows_(rows), cols_(cols) {
     matrices_ = new Matrix[heights];
     for (int i = 0; i < heights; i++) {
         matrices_[i] = Matrix(rows, cols);
     }
 }
 
-Tensor::Tensor(int heights, int rows, int cols, double arg)
-    : heights_(heights), rows_(rows), cols_(cols) {
+Tensor::Tensor(int heights, int rows, int cols, double arg) : heights_(heights), rows_(rows), cols_(cols) {
     matrices_ = new Matrix[heights];
     for (int i = 0; i < heights; i++) {
         matrices_[i] = Matrix(rows, cols, arg);
     }
 }
 
-Tensor::Tensor(const Tensor& arg)
-    : heights_(arg.heights_), rows_(arg.rows_), cols_(arg.cols_) {
+Tensor::Tensor(const Tensor& arg) : heights_(arg.heights_), rows_(arg.rows_), cols_(arg.cols_) {
     matrices_ = new Matrix[heights_];
     for (int h = 0; h < heights_; ++h) {
         for (int i = 0; i < rows_; ++i) {
@@ -31,8 +28,7 @@ Tensor::Tensor(const Tensor& arg)
     }
 }
 
-Tensor::Tensor(Tensor& arg)
-    : heights_(arg.heights_), rows_(arg.rows_), cols_(arg.cols_) {
+Tensor::Tensor(Tensor& arg) : heights_(arg.heights_), rows_(arg.rows_), cols_(arg.cols_) {
     matrices_ = new Matrix[heights_];
     for (int h = 0; h < heights_; ++h) {
         for (int i = 0; i < rows_; ++i) {
@@ -146,9 +142,20 @@ Tensor operator-(Tensor& lhs, Tensor& rhs) {
 }
 
 double frobenius_norm(const Tensor& arg) {
+    // double result = 0.0;
+    // for (int i = 0; i < arg.heights(); i++) {
+    //     for (int row = 0; row < arg.rows(); row++) {
+    //         for (int col = 0; col < arg.cols(); col++) {
+    //             result += arg[i](row, col) * arg[i](row, col);
+    //         }
+    //     }
+    // }
+    //return sqrt(result);
     double result = 0.0;
+    double tmp=0;
     for (int i = 0; i < arg.heights(); i++) {
-        result += frobenius_norm(arg[i]);
+        tmp= frobenius_norm(arg[i]);
+        result += tmp*tmp;
     }
-    return result;
+    return sqrt(result);
 }
