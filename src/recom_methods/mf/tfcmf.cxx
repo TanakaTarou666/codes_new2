@@ -76,7 +76,6 @@ void TFCMF::calculate_factors() {
             user_factor_values_ += latent_dimension_;
         }
     }
-
     calculate_membership();
 }
 

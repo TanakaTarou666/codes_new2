@@ -35,13 +35,13 @@ void MF::set_initial_values(int seed) {
             mt.seed(seed);
             // ランダムに値生成
             std::uniform_real_distribution<> rand_user_factors_(0.001, 1.0);
-            user_factors_[i][k_i] = rand_user_factors_(mt);
+            user_factors_(i,k_i) = rand_user_factors_(mt);
             seed++;
         }
         for (int j = 0; j < item_factors_.rows(); j++) {
             mt.seed(seed);
             std::uniform_real_distribution<> rand_item_factors_(0.001, 1.0);
-            item_factors_[j][k_i] = rand_item_factors_(mt);
+            item_factors_(j,k_i) = rand_item_factors_(mt);
             seed++;
         }
     }
@@ -129,6 +129,6 @@ bool MF::calculate_convergence_criterion() {
 void MF::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         // 欠損箇所だけ計算
-        prediction_[index] = user_factors_[missing_data_indices_[index][0]] * item_factors_[missing_data_indices_[index][1]];
+        prediction_[index] = user_factors_[missing_data_indices_(index,0)] * item_factors_[missing_data_indices_(index,1)];
     }
 }
