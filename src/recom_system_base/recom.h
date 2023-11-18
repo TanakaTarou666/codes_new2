@@ -70,10 +70,12 @@ class Recom {
     void precision_summury();
 };
 
-std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing_value);
 // 結果を出力するフォルダを作成
+std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing_value);
 std::vector<std::string> mkdir_result(std::vector<std::string> dirs,std::vector<double> parameters, int num_missing_value);
 
+//main.cxxで使う関数
 std::string append_current_time_if_test(std::string method);
+bool check_command_args(int argc, char *argv[]);
 
 #endif

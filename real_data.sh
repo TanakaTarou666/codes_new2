@@ -1,9 +1,9 @@
-files=("tfcmf")
+files=("mf" "tfcmf")
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
 for file in "${files[@]}"; do
   {
-    for i in {0..7}; do
+    for i in {0..5}; do
       {
         rm -f ".out/${file}_${i}"
         make ".out/${file}_${i}" ARG=${i}

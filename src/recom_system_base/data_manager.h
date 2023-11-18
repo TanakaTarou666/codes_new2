@@ -1,7 +1,7 @@
 #include <iomanip>
 
-//#define ARTIFICIALITY
- #define TEST
+#define ARTIFICIALITY
+//#define TEST
 //  #define BOOK
 
 namespace rs {
@@ -34,7 +34,7 @@ const double fuzzifier_lambda[] = {10, 100, 1000};
 const double convergence_criteria = 0.011;
 const int missing_pattern = 4;
 const int num_initial_values = 4;
-const int steps = 3000;
+const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;
@@ -56,7 +56,7 @@ const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;
-const int start_missing_valu = 5000;
+const int start_missing_valu = 5500;
 const int end_missing_valu = 7000;
 const int step_missing_valu = 500;
 #elif defined BOOK

@@ -68,7 +68,8 @@
         "__config": "cpp",
         "__bit_reference": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "cfloat": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

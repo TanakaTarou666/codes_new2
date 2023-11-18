@@ -101,7 +101,7 @@ void Recom::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
     for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
-        std::cout << method_name_ << ": initial setting " << initial_value_index;
+        std::cout << method_name_ << ": initial setting " << initial_value_index<< std::endl;
         set_initial_values(initial_value_index);
         error_detected_ = false;
 #ifndef ARTIFICIALITY
@@ -110,14 +110,14 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            std::cout << ": step: " << step;
+            //std::cout << ": step: " << step;
             if (calculate_convergence_criterion()) {
-                std::cout << ": step: " << step << std::endl;
+                //std::cout << ": step: " << step << std::endl;
                 break;
             }
             if (error_detected_ == true || step == rs::steps - 1) {
                 error_detected_ = true;
-                std::cout << ": step: " << step << " error" << std::endl;
+                //std::cout << ": step: " << step << " error" << std::endl;
                 break;
             }
         }
@@ -368,4 +368,27 @@ std::string append_current_time_if_test(std::string method) {
 #else
     return method;
 #endif
+}
+
+bool check_command_args(int argc, char *argv[]){
+    bool result = false;
+    if (argc != 3) {
+        std::cerr << "コマンドライン引数の数が正しくありません\n開始潜在次元%, 終了潜在次元%\n"
+                  << "例: xxx.out 0 5" << std::endl;
+        result = true;
+    }
+    
+    int latent_dimensions_size = sizeof(rs::latent_dimensions);
+
+    int latent_dimension_numbers[2];
+    latent_dimension_numbers[0] = std::stoi(argv[1]);
+    latent_dimension_numbers[1] = std::stoi(argv[2]);
+
+    if (latent_dimension_numbers[0] > latent_dimensions_size || latent_dimension_numbers[1] > latent_dimensions_size ||
+        latent_dimension_numbers[0] > latent_dimension_numbers[1] || latent_dimension_numbers[0] < 0 || latent_dimension_numbers[1] < 0) {
+        std::cerr << "コマンドライン引数を正しく指定してください\n開始潜在次元%, 終了潜在次元%\n"
+                  << "例: xxx.out 0 5" << std::endl;
+        result = true;
+    }
+    return result;
 }

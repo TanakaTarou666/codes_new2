@@ -2,6 +2,8 @@ CXX = g++ -std=c++17
 CXXFLAGS = -O3 -mtune=native -march=native -mfpmath=both
 #CXXFLAGS =  -g -Wall -Wextra  #debug用
 
+ARG = all
+
 math_utils = src/math_utils/vector.cxx \
             src/math_utils/matrix.cxx \
 			src/math_utils/sparse_vector.cxx \
@@ -17,9 +19,9 @@ fm_recom = src/recom_system_base/fm_base.cxx $(normal_recom)
 tfcfm_recom = src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.cxx $(normal_recom)
 
 # mf
-.out/mf: src/recom_methods/mf/mf.cxx main_recom/mf/mf_main.cxx $(normal_recom)
+.out/mf_$(ARG): src/recom_methods/mf/mf.cxx main_recom/mf/mf_main.cxx $(normal_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-.out/tfcmf: src/recom_methods/mf/tfcmf.cxx main_recom/mf/tfcmf_main.cxx $(tfc_recom)
+.out/tfcmf_$(ARG): src/recom_methods/mf/tfcmf.cxx main_recom/mf/tfcmf_main.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/qfcmf: src/recom_methods/mf/qfcmf.cxx main_recom/mf/qfcmf_main.cxx $(qfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	
