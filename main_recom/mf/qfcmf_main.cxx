@@ -1,19 +1,25 @@
 #include "../../src/recom_methods/mf/qfcmf.h"
 
-int main() {
+int main(int argc, char *argv[]) {
+    int start_latent_dimension = std::stoi(argv[1]);
+    int end_latent_dimension = std::stoi(argv[2]);
+    if (check_command_args(argc,argv)) {
+        exit(1);
+    }
+
     // 時間計測
     auto start = std::chrono::high_resolution_clock::now();
 
     for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         QFCMF recom(mv);
         recom.input(rs::input_data_name);
-        for (double ld : rs::latent_dimensions) {
+        for (int ld = start_latent_dimension; ld <= end_latent_dimension; ld++) {
             for (double rp : rs::reg_parameters) {
                 for (double lr : rs::learning_rates) {
                     for (int c : rs::cluster_size) {
                         for (double em : rs::fuzzifier_em) {
                             for (double lambda : rs::fuzzifier_lambda) {
-                                recom.set_parameters(ld, c, em, lambda, rp, lr);
+                                recom.set_parameters(rs::latent_dimensions[ld], c, em, lambda, rp, lr);
                                 for (int i = 0; i < rs::missing_pattern; i++) {
                                     // データを欠損
                                     recom.revise_missing_values();

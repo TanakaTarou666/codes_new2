@@ -23,7 +23,7 @@ tfcfm_recom = src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.
 	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/tfcmf_$(ARG): src/recom_methods/mf/tfcmf.cxx main_recom/mf/tfcmf_main.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-.out/qfcmf: src/recom_methods/mf/qfcmf.cxx main_recom/mf/qfcmf_main.cxx $(qfc_recom)
+.out/qfcmf_$(ARG): src/recom_methods/mf/qfcmf.cxx main_recom/mf/qfcmf_main.cxx $(qfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	
 
 # wnmf	

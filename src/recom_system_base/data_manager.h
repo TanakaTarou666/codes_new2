@@ -1,8 +1,8 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
+//#define ARTIFICIALITY
 //#define TEST
-//  #define BOOK
+#define BOOK
 
 namespace rs {
 
@@ -15,7 +15,7 @@ const double latent_dimensions[] = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 const double reg_parameters[] = {0.01, 0.05, 0.09, 0.13};
 const double learning_rates[] = {0.001};
 const int cluster_size[] = {2, 3, 4, 5};
-const double fuzzifier_em[] = {1.001, 1.1 1.9};
+const double fuzzifier_em[] = {1.001, 1.1 ,1.9};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 1.0e-5;
 const int missing_pattern = 5;
@@ -56,7 +56,7 @@ const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;
-const int start_missing_valu = 5500;
+const int start_missing_valu = 5000;
 const int end_missing_valu = 7000;
 const int step_missing_valu = 500;
 #elif defined BOOK
