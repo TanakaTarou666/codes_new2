@@ -3,7 +3,7 @@ files=("fm_sgd")
 # 2つのコアで並列処理を実行
 for file in "${files[@]}"; do
   {
-    for i in {0..7}; do
+    for i in {0..0}; do
       {
         rm -f ".out/${file}_${i}"
         make ".out/${file}_${i}" ARG=${i}

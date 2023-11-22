@@ -17,6 +17,7 @@ tfc_recom = src/recom_system_base/tfc_recom.cxx $(normal_recom)
 qfc_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_recom.cxx $(normal_recom)
 fm_recom = src/recom_system_base/fm_base.cxx $(normal_recom)
 tfcfm_recom = src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.cxx $(normal_recom)
+qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.cxx $(normal_recom)
 
 # mf
 .out/mf_$(ARG): src/recom_methods/mf/mf.cxx main_recom/mf/mf_main.cxx $(normal_recom)
@@ -31,12 +32,18 @@ tfcfm_recom = src/recom_system_base/tfc_recom.cxx src/recom_system_base/fm_base.
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 # fm_als
-.out/fm_als: src/recom_methods/fm_als/fm_als.cxx main_recom/fm_als/fm_als_main.cxx $(fm_recom)
+.out/fm_als_$(ARG): src/recom_methods/fm_als/fm_als.cxx main_recom/fm_als/fm_als_main.cxx $(fm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/tfcfm_als: src/recom_methods/fm_als/tfcfm_als.cxx main_recom/fm_als/tfcfm_als_main.cxx $(tfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	
-# fm_als	
+# fm_als
+.out/fm_sgd_$(ARG): src/recom_methods/fm_sgd/fm_sgd.cxx main_recom/fm_sgd/fm_sgd_main.cxx $(fm_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@	
 .out/tfcfm_sgd: src/recom_methods/fm_sgd/tfcfm_sgd.cxx main_recom/fm_sgd/tfcfm_sgd_main.cxx $(tfcfm_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+# result 
+.out/result : main_recom/result/result.cxx src/recom_methods/mf/mf.cxx src/recom_methods/mf/tfcmf.cxx src/recom_methods/mf/qfcmf.cxx src/recom_methods/fm_als/fm_als.cxx src/recom_methods/fm_sgd/fm_sgd.cxx $(qfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 
@@ -46,6 +53,7 @@ clean:
 	rm -f .out/qfcmf
 	rm -f .out/tfcwnmf
 	rm -f .out/fm_als
+	rm -f .out/fm_sgd
 	rm -f .out/tfcfm_sgd
 	rm -f .out/tfcfm_als
 

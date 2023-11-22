@@ -101,7 +101,7 @@ void Recom::train() {
     int error_count = 0;
     double best_objective_value = DBL_MAX;
     for (int initial_value_index = 0; initial_value_index < rs::num_initial_values; initial_value_index++) {
-        std::cout << method_name_ << ": initial setting " << initial_value_index<< std::endl;
+        std::cout << method_name_ << ": initial setting " << initial_value_index << std::endl;
         set_initial_values(initial_value_index);
         error_detected_ = false;
 #ifndef ARTIFICIALITY
@@ -110,14 +110,14 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            //std::cout << ": step: " << step;
+            // std::cout << ": step: " << step;
             if (calculate_convergence_criterion()) {
-                //std::cout << ": step: " << step << std::endl;
+                // std::cout << ": step: " << step << std::endl;
                 break;
             }
             if (error_detected_ == true || step == rs::steps - 1) {
                 error_detected_ = true;
-                //std::cout << ": step: " << step << " error" << std::endl;
+                // std::cout << ": step: " << step << " error" << std::endl;
                 break;
             }
         }
@@ -298,6 +298,167 @@ void Recom::precision_summury() {
     return;
 }
 
+void Recom::tally_result() {
+    std::string result = std::filesystem::current_path();
+    result = result + "/../../RESULT";
+    // 出力先のディレクトリ作成
+    std::string directory_name_of_auc = result + "/AUC";
+    std::string directory_name_of_mae = result + "/MAE";
+    mkdir(directory_name_of_auc.c_str(), 0755);
+    mkdir(directory_name_of_mae.c_str(), 0755);
+    directory_name_of_auc += "/summay";
+    directory_name_of_mae += "/summay";
+    mkdir(directory_name_of_auc.c_str(), 0755);
+    mkdir(directory_name_of_mae.c_str(), 0755);
+
+    // 出力のファイル名
+    std::string output_file_name_of_auc = method_name_ + "_" + rs::data_name + std::to_string(num_missing_value_) + "_summary" + ".txt";
+    std::string output_file_name_of_mae = method_name_ + "_" + rs::data_name + std::to_string(num_missing_value_) + "_summary" + ".txt";
+
+    // 入力のファイル名
+    std::string input_file_name = result + "/" + method_name_ + "/" + method_name_ + "_" + rs::data_name + std::to_string(num_missing_value_);
+    std::string tmp_parameters = "/";
+    for (int i = 0; i < (int)parameters_.size(); i++) {
+        std::ostringstream oss;
+        oss << std::setprecision(10) << parameters_[i];
+        std::string p(oss.str());
+        tmp_parameters += p;
+        if (i < (int)parameters_.size() - 1) tmp_parameters += "_";
+    }
+    tmp_parameters += "/ChoicedMaeAuc.txt";
+    input_file_name += tmp_parameters;
+
+    // ファイル出力
+    std::ifstream ifs(input_file_name);
+    if (!ifs) {
+        std::cerr << "ファイルopen失敗: " << input_file_name << std::endl;
+    } else {
+        std::cerr << "ファイルopen成功: " << input_file_name << std::endl;
+        double tmp_auc[rs::missing_pattern];
+        double tmp_mae[rs::missing_pattern];
+        int i = 0;
+        for (std::string str; std::getline(ifs, str); i++) {
+            if (i >= rs::missing_pattern) {
+                std::cout << "tmp_aucの容量を超えました。" << std::endl;
+                break;
+            }
+            std::istringstream stream(str);
+            int j = 0;
+            std::string tmp;
+            for (std::string tmp; getline(stream, tmp, '\t'); j++) {
+                if (j == 1) tmp_auc[i] = std::stod(tmp);
+                if (j == 0) tmp_mae[i] = std::stod(tmp);
+            }
+        }
+        // tmp_aucとtmp_maeの値をファイルに出力
+        std::ofstream ofs_auc(directory_name_of_auc + "/" + output_file_name_of_auc, std::ios::app);
+        std::ofstream ofs_mae(directory_name_of_mae + "/" + output_file_name_of_mae, std::ios::app);
+        if (ofs_auc && ofs_mae) {
+            for (int k = 0; k < rs::missing_pattern; ++k) {
+                ofs_auc << tmp_auc[k] << "\t";
+                ofs_mae << tmp_mae[k] << "\t";
+            }
+            for (int i = 0; i < (int)parameters_.size(); i++) {
+                ofs_auc << std::setprecision(10) << parameters_[i] << "\t";
+                ofs_mae << std::setprecision(10) << parameters_[i] << "\t";
+            }
+            ofs_auc << std::endl;
+            ofs_mae << std::endl;
+            std::cout << "tmp_aucとtmp_maeの値をファイルに追記しました。" << std::endl;
+        } else {
+            std::cerr << "ファイルに書き込めませんでした。" << std::endl;
+        }
+    }
+}
+
+void Recom::output_high_score_in_tally_result() {
+    std::string result = std::filesystem::current_path();
+    result = result + "/../../RESULT";
+    // 入力元のディレクトリ名
+    std::string directory_name_of_auc = result + "/AUC";
+    std::string directory_name_of_mae = result + "/MAE";
+    directory_name_of_auc += "/summay";
+    directory_name_of_mae += "/summay";
+
+    // 入力元のファイル名
+    std::string input_file_name_of_auc = method_name_ + "_" + rs::data_name + std::to_string(num_missing_value_) + "_summary" + ".txt";
+    std::string input_file_name_of_mae = method_name_ + "_" + rs::data_name + std::to_string(num_missing_value_) + "_summary" + ".txt";
+
+    // ここからAUC
+    std::ifstream ifs_auc(directory_name_of_auc + "/" + input_file_name_of_auc);
+    if (!ifs_auc) {
+        std::cerr << "ファイルopen失敗: " << directory_name_of_auc + input_file_name_of_auc << std::endl;
+    } else {
+        std::cerr << "ファイルopen成功: " << directory_name_of_auc + input_file_name_of_auc << std::endl;
+        //AUCのファイルの読み取り
+        double best_sum_auc = 0.0;
+        Vector best_auc_line(rs::missing_pattern+(int)parameters_.size());
+        for (std::string str; std::getline(ifs_auc, str);) {
+            std::istringstream stream(str);
+            int j = 0;
+            double tmp_sum_auc = 0;
+            Vector tmp_auc_line(rs::missing_pattern+(int)parameters_.size());
+            for (std::string tmp; getline(stream, tmp, '\t'); j++) {
+                tmp_auc_line[j] = std::stod(tmp);
+                if (j < rs::missing_pattern) tmp_sum_auc += std::stod(tmp);
+            }
+            if (tmp_sum_auc > best_sum_auc) {
+                best_sum_auc = tmp_sum_auc;
+                best_auc_line = tmp_auc_line;
+            }
+        }
+        // 最高AUCの値とパラメータをファイルに出力
+        std::ofstream ofs_auc(directory_name_of_auc + "/../"+method_name_+"_result.txt", std::ios::app);
+        if (ofs_auc) {
+            ofs_auc << num_missing_value_ << "\t";
+            for (int k = 0; k < rs::missing_pattern+(int)parameters_.size(); ++k) {
+                ofs_auc << best_auc_line[k] << "\t";
+            }
+            ofs_auc << std::endl;
+            std::cout << "aucのresultファイルに追記しました。" << std::endl;
+        } else {
+            std::cerr << "ファイルに書き込めませんでした。" << std::endl;
+        }
+    }
+
+    // ここからMAE
+    std::ifstream ifs_mae(directory_name_of_mae + "/" + input_file_name_of_mae);
+    if (!ifs_mae) {
+        std::cerr << "ファイルopen失敗: " << directory_name_of_mae + input_file_name_of_mae << std::endl;
+    } else {
+        std::cerr << "ファイルopen成功: " << directory_name_of_mae + input_file_name_of_mae << std::endl;
+        //MAEのファイルの読み取り
+        double best_sum_mae = DBL_MAX;
+        Vector best_mae_line(rs::missing_pattern+(int)parameters_.size());
+        for (std::string str; std::getline(ifs_mae, str);) {
+            std::istringstream stream(str);
+            int j = 0;
+            double tmp_sum_mae = 0;
+            Vector tmp_mae_line(rs::missing_pattern+(int)parameters_.size());
+            for (std::string tmp; getline(stream, tmp, '\t'); j++) {
+                tmp_mae_line[j] = std::stod(tmp);
+                if (j < rs::missing_pattern) tmp_sum_mae += std::stod(tmp);
+            }
+            if (tmp_sum_mae < best_sum_mae) {
+                best_sum_mae = tmp_sum_mae;
+                best_mae_line = tmp_mae_line;
+            }
+        }
+        // 最高AUCの値とパラメータをファイルに出力
+        std::ofstream ofs_mae(directory_name_of_mae + "/../"+method_name_+"_result.txt", std::ios::app);
+        if (ofs_mae) {
+            ofs_mae << num_missing_value_ << "\t";
+            for (int k = 0; k < rs::missing_pattern+(int)parameters_.size(); ++k) {
+                ofs_mae << best_mae_line[k] << "\t";
+            }
+            ofs_mae << std::endl;
+            std::cout << "maeのresultファイルに追記しました。" << std::endl;
+        } else {
+            std::cerr << "ファイルに書き込めませんでした。" << std::endl;
+        }
+    }
+}
+
 std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing_value) {
     std::vector<std::string> v;
     std::string c_p = std::filesystem::current_path();
@@ -370,14 +531,14 @@ std::string append_current_time_if_test(std::string method) {
 #endif
 }
 
-bool check_command_args(int argc, char *argv[]){
+bool check_command_args(int argc, char *argv[]) {
     bool result = false;
     if (argc != 3) {
         std::cerr << "コマンドライン引数の数が正しくありません\n開始潜在次元%, 終了潜在次元%\n"
                   << "例: xxx.out 0 5" << std::endl;
         result = true;
     }
-    
+
     int latent_dimensions_size = sizeof(rs::latent_dimensions);
 
     int latent_dimension_numbers[2];

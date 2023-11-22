@@ -1,5 +1,6 @@
 #include <float.h>
 #include <sys/stat.h>
+
 #include <cfloat>
 #include <chrono>
 #include <filesystem>
@@ -8,25 +9,24 @@
 #include <random>
 #include <vector>
 
-#include "../math_utils/sparse_vector.h"
 #include "../math_utils/sparse_matrix.h"
+#include "../math_utils/sparse_vector.h"
 
 #ifndef __RECOM__
 #define __RECOM__
-
 
 #include "data_manager.h"
 
 class Recom {
    private:
     // 欠損のさせ方を決めるシード値
-    int seed_=0;
+    int seed_ = 0;
     // 予測値評価
     Vector mae_, auc_;
     Vector tp_fn_, fp_tn_;
 
    protected:
-    //欠損数
+    // 欠損数
     int num_missing_value_;
     std::vector<std::string> dirs_;
     std::vector<double> parameters_;
@@ -36,7 +36,7 @@ class Recom {
     // 欠損前データ
     SparseMatrix sparse_correct_data_;
     double *sparse_missing_data_values_;
-    int *sparse_missing_data_row_pointers_,*sparse_missing_data_col_indices_;
+    int *sparse_missing_data_row_pointers_, *sparse_missing_data_col_indices_;
     // エラーの検知
     bool error_detected_;
     // 欠損させた箇所，類似度
@@ -45,15 +45,14 @@ class Recom {
     Vector sparse_missing_data_cols_;
     // 予測評
     Vector prediction_;
-    double prev_objective_value_ ,objective_value_;
-
+    double prev_objective_value_, objective_value_;
 
    public:
     // ユーザ数，アイテム数，欠損数，欠損パターン
     Recom(int num_missing_value);
     void input(std::string);
     void revise_missing_values(void);
-    //実際の計算
+    // 実際の計算
     virtual void train();
     virtual void set_initial_values(int seed);
     virtual void calculate_factors();
@@ -68,13 +67,16 @@ class Recom {
     void sort(Vector &fal, Vector &tru, int index);
     // AUCの計算，text1に読み込むROCファイル，text2に平均AUCを保存
     void precision_summury();
+    // 結果の集計
+    void tally_result();
+    void output_high_score_in_tally_result();
 };
 
 // 結果を出力するフォルダを作成
 std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing_value);
-std::vector<std::string> mkdir_result(std::vector<std::string> dirs,std::vector<double> parameters, int num_missing_value);
+std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector<double> parameters, int num_missing_value);
 
-//main.cxxで使う関数
+// main.cxxで使う関数
 std::string append_current_time_if_test(std::string method);
 bool check_command_args(int argc, char *argv[]);
 

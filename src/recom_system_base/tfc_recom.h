@@ -1,6 +1,9 @@
 #include "../math_utils/tensor.h"
 #include "recom.h"
 
+#ifndef __TFCRECOM__
+#define __TFCRECOM__
+
 class TFCRecom : virtual public Recom {
    protected:
     Matrix membership_, prev_membership_;
@@ -13,3 +16,5 @@ class TFCRecom : virtual public Recom {
     virtual void calculate_membership();
     
 };
+
+#endif

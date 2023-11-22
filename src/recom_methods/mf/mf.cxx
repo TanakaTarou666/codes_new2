@@ -1,7 +1,7 @@
 #include "mf.h"
 
 MF::MF(int missing_pattern) : Recom(missing_pattern), user_factors_(), item_factors_(), prev_user_factors_(), prev_item_factors_() {
-    method_name_ = "MF";
+    method_name_ = append_current_time_if_test("MF");
 }  // ファイル名
 
 void MF::set_parameters(double latent_dimension_percentage, double learning_rate, double reg_parameter) {

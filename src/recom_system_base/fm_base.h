@@ -1,5 +1,8 @@
 #include "recom.h"
 
+#ifndef __FMBASE__
+#define __FMBASE__
+
 class FMBase : virtual public Recom {
    protected:
     
@@ -9,3 +12,5 @@ class FMBase : virtual public Recom {
     virtual void precompute();
     void train() override;
 };
+
+#endif

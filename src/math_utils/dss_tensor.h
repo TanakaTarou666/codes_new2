@@ -1,6 +1,9 @@
 #include "sparse_matrix.h"
 #include "sparse_vector.h"
 
+#ifndef __DSDTENSOR__
+#define __DSDTENSOR__
+
 class DSSTensor {
    private:
     int rows_;
@@ -31,3 +34,5 @@ class DSSTensor {
     int* get_row_pointers();  // データへのポインタを取得するメソッド
     int* get_col_indices();  // データへのポインタを取得するメソッド
 };
+
+#endif

@@ -2,7 +2,7 @@
 
 FMWithALS::FMWithALS(int missing_count)
     : FMBase(missing_count), Recom(missing_count), w0_(), prev_w0_(), w_(), prev_w_(), v_(), prev_v_(), e_(), q_(), x_() {
-    method_name_ = "FM_ALS";
+    method_name_ = append_current_time_if_test("FM_ALS");
 }
 
 void FMWithALS::set_parameters(double latent_dimension_percentage, double reg_parameter) {
@@ -40,7 +40,7 @@ void FMWithALS::set_initial_values(int seed) {
             // ランダムに値生成
             std::uniform_real_distribution<> rand_v(-0.01, 0.01);
             v_(n, k) = rand_v(mt);
-            //v_(n, k) = 0.01 * k + 0.01 * n;
+            // v_(n, k) = 0.01 * k + 0.01 * n;
             seed++;
         }
     }
@@ -81,7 +81,7 @@ void FMWithALS::precompute() {
             }
         }
     }
-    //std::cout << q_[80] << std::endl;
+    // std::cout << q_[80] << std::endl;
 }
 
 void FMWithALS::calculate_factors() {
@@ -98,7 +98,7 @@ void FMWithALS::calculate_factors() {
             }
         }
     }
-    double w0a = -numerator_w0 / l;
+    double w0a = -numerator_w0 / (l + reg_parameter_);
     for (l = 0; l < e_.size(); l++) e_[l] += (w0a - w0_);
     w0_ = w0a;
 
@@ -118,7 +118,7 @@ void FMWithALS::calculate_factors() {
             }
         }
         for (int i = 0; i < w_.size(); ++i) {
-            if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / denominator_w[i];
+            if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
         }
         l = 0;
         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
@@ -162,7 +162,7 @@ void FMWithALS::calculate_factors() {
                 }
             }
             for (int a = 0; a < v_.rows(); ++a) {
-                if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / denominator_v[a];
+                if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
             }
             l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
@@ -199,10 +199,11 @@ bool FMWithALS::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = abs(prev_w0_ - w0_) + squared_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_);
-    //std::cout << "diff:" << diff << "\t" << std::endl;
-    // std::cout << "w0:" << w0_ << std::endl;
-    // std::cout << "w:" << w_ << std::endl;
-    // std::cout << "v:" << v_ << std::endl;
+    // std::cout << "L:" << calculate_objective_value() << "\t";
+    // std::cout << "diff:" << diff << "\t" << std::endl;
+    // std::cout << "w0:" << abs(prev_w0_ - w0_) << std::endl;
+    // std::cout << "w:" << squared_norm(prev_w_ - w_)  << std::endl;
+    // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
@@ -221,11 +222,11 @@ bool FMWithALS::calculate_convergence_criterion() {
 void FMWithALS::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
-        prediction_[index] += predict_y(x_(missing_data_indices_[index][0], missing_data_indices_[index][1]), w0_, w_, v_);
+        prediction_[index] += predict_y(x_(missing_data_indices_(index,0), missing_data_indices_(index,1)), w0_, w_, v_);
         // std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:"
-        //           << sparse_correct_data_(missing_data_indices_[index][0],
-        //                                   missing_data_indices_[index][1])
+        //           << sparse_correct_data_(missing_data_indices_(index,0),
+        //                                   missing_data_indices_(index,1))
         //           << std::endl;
     }
 }
