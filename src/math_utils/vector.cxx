@@ -196,3 +196,4 @@ double squared_norm(const Vector& arg) {
     }
     return sqrt(result);
 }
+ 

@@ -128,7 +128,7 @@ double FMWithSGD::calculate_objective_value() {
         }
     }
     return result;
-}
+}  
 
 bool FMWithSGD::calculate_convergence_criterion() {
     bool result = false;
