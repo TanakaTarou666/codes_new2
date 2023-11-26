@@ -133,10 +133,11 @@ void TFCFMWithSGD::calculate_factors() {
                     double err = (sparse_missing_data_(i, j) - prediction);
 
                     // w0の更新
-                    w0_[c] += learning_rate_ * (tmp_membership * err - reg_parameter_ * w0_[c]);
+                    w0_[c] += learning_rate_ * (2 * tmp_membership * err - reg_parameter_ * w0_[c]);
                     // wの更新
                     for (int a = 0; a < 2; a++) {
-                        w_(c, tmp_x(a, "index")) += learning_rate_ * (tmp_x(a) * tmp_membership * err - reg_parameter_ * w_(c, tmp_x(a, "index")));
+                        w_(c, tmp_x(a, "index")) +=
+                            learning_rate_ * (2 * tmp_x(a) * tmp_membership * err - reg_parameter_ * w_(c, tmp_x(a, "index")));
                     }
                     // vの更新
                     for (int a = 0; a < 2; a++) {
@@ -144,12 +145,12 @@ void TFCFMWithSGD::calculate_factors() {
                         double tmp_x_index = tmp_x(a, "index");
                         for (int factor = 0; factor < latent_dimension_; factor++) {
                             tmp_v(tmp_x_index, factor) +=
-                                learning_rate_ * (tmp_membership * err * tmp_x_value * (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
+                                learning_rate_ * (2 * tmp_membership * err * tmp_x_value * (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
                                                   reg_parameter_ * tmp_v(tmp_x_index, factor));
                         }
-                    }  
+                    }
                 }
-            }  // j  
+            }  // j
         }      // i
         v_[c] = tmp_v;
     }  // c

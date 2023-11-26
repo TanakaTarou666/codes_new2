@@ -171,7 +171,7 @@ bool QFCMF::calculate_convergence_criterion() {
                   frobenius_norm(prev_membership_ - membership_) + squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
 // std::cout<<frobenius_norm(prev_user_factors_ - user_factors_)  <<std::endl;
 // std::cout<<frobenius_norm(prev_item_factors_ - item_factors_)<<std::endl;
-// std::cout<<frobenius_norm(prev_membership_ - membership_)<<std::endl; 
+// std::cout<<frobenius_norm(prev_membership_ - membership_)<<std::endl;
 // std::cout<<squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_)<<std::endl;
 #else
     objective_value_ = calculate_objective_value();

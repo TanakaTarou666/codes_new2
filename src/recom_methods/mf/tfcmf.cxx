@@ -132,8 +132,8 @@ double TFCMF::calculate_objective_value() {
     double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c,i)
-            +1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
+            result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
         }
         for (int i = 0; i < rs::num_users; i++) {
             user_factor_values_ = user_factors_[c].get_values() + latent_dimension_ * i;
@@ -144,7 +144,7 @@ double TFCMF::calculate_objective_value() {
         for (int j = 0; j < rs::num_items; j++) {
             item_factor_values_ = item_factors_[c].get_values() + latent_dimension_ * j;
             for (int k = 0; k < latent_dimension_; k++) {
-                item_factors__L2Norm += item_factor_values_[k]*item_factor_values_[k];
+                item_factors__L2Norm += item_factor_values_[k] * item_factor_values_[k];
             }
         }
     }
@@ -157,7 +157,7 @@ bool TFCMF::calculate_convergence_criterion() {
 #if defined ARTIFICIALITY
     double diff = frobenius_norm(prev_user_factors_ - user_factors_) + frobenius_norm(prev_item_factors_ - item_factors_) +
                   frobenius_norm(prev_membership_ - membership_);
-                  std::cout<<" diff:" <<diff << std::endl;
+    std::cout << " diff:" << diff << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
@@ -177,8 +177,8 @@ void TFCMF::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {
-            prediction_[index] += membership_(c, missing_data_indices_(index,0)) *
-                                  (user_factors_[c][missing_data_indices_(index,0)] * item_factors_[c][missing_data_indices_(index,1)]);
+            prediction_[index] += membership_(c, missing_data_indices_(index, 0)) *
+                                  (user_factors_[c][missing_data_indices_(index, 0)] * item_factors_[c][missing_data_indices_(index, 1)]);
         }
         //  std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:" << sparse_correct_data_(missing_data_indices_(index,0),missing_data_indices_[index][1]) << std::endl;

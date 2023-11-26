@@ -85,7 +85,7 @@ void FMWithSGD::calculate_factors() {
                 double squareSum[latent_dimension_] = {};
                 for (int factor = 0; factor < latent_dimension_; factor++) {
                     for (int a = 0; a < 2; a++) {
-                        double tmp = v_(tmp_x(a, "index"),factor) * tmp_x(a);
+                        double tmp = v_(tmp_x(a, "index"), factor) * tmp_x(a);
                         sum[factor] += tmp;
                         squareSum[factor] += tmp * tmp;
                     }
@@ -97,18 +97,18 @@ void FMWithSGD::calculate_factors() {
                 double err = (sparse_missing_data_(i, j) - prediction);
 
                 // w0の更新
-                w0_ += learning_rate_ * (err - reg_parameter_ * w0_);
+                w0_ += learning_rate_ * (2 * err - reg_parameter_ * w0_);
                 // wの更新
                 for (int a = 0; a < 2; a++) {
-                    w_[tmp_x(a, "index")] += learning_rate_ * (tmp_x(a) * err - reg_parameter_ * w_[tmp_x(a, "index")]);
+                    w_[tmp_x(a, "index")] += learning_rate_ * (2 * tmp_x(a) * err - reg_parameter_ * w_[tmp_x(a, "index")]);
                 }
                 // vの更新
                 for (int a = 0; a < 2; a++) {
                     double tmp_x_value = tmp_x(a);
                     double tmp_x_index = tmp_x(a, "index");
                     for (int factor = 0; factor < latent_dimension_; factor++) {
-                        v_(tmp_x_index,factor) += learning_rate_ * (err * tmp_x_value * (sum[factor] - v_(tmp_x_index,factor) * tmp_x_value) -
-                                                                      reg_parameter_ * v_(tmp_x_index,factor));
+                        v_(tmp_x_index, factor) += learning_rate_ * (2 * err * tmp_x_value * (sum[factor] - v_(tmp_x_index, factor) * tmp_x_value) -
+                                                                     reg_parameter_ * v_(tmp_x_index, factor));
                     }
                 }
             }
@@ -128,7 +128,7 @@ double FMWithSGD::calculate_objective_value() {
         }
     }
     return result;
-}  
+}
 
 bool FMWithSGD::calculate_convergence_criterion() {
     bool result = false;

@@ -11,9 +11,9 @@ void QFCRecom::calculate_membership() {
                 double denominator = 0.0;
                 for (int j = 0; j < cluster_size_; j++) {
                     denominator += cluster_size_adjustments_[j] / cluster_size_adjustments_[c] *
-                                   pow((1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(c, i)) /
-                                           (1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(j, i)),
-                                       1.0 / (fuzzifier_em_ - 1));
+                                   pow((1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(j, i)) /
+                                           (1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(c, i)),
+                                       1.0 / (1 - fuzzifier_em_));
                 }
                 membership_(c, i) = 1.0 / denominator;
             }
