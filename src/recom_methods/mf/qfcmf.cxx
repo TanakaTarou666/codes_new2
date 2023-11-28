@@ -147,20 +147,8 @@ double QFCMF::calculate_objective_value() {
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
                           (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
-        for (int i = 0; i < rs::num_users; i++) {
-            user_factor_values_ = user_factors_[c].get_values() + latent_dimension_ * i;
-            for (int k = 0; k < latent_dimension_; k++) {
-                user_factors__L2Norm += user_factor_values_[k] * user_factor_values_[k];
-            }
-        }
-        for (int j = 0; j < rs::num_items; j++) {
-            item_factor_values_ = item_factors_[c].get_values() + latent_dimension_ * j;
-            for (int k = 0; k < latent_dimension_; k++) {
-                item_factors__L2Norm += item_factor_values_[k] * item_factor_values_[k];
-            }
-        }
     }
-    result += reg_parameter_ * (user_factors__L2Norm + item_factors__L2Norm);
+    result += reg_parameter_ * (frobenius_norm(user_factors_) + frobenius_norm(item_factors_));
     return result;
 }
 

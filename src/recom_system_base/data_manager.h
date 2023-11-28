@@ -25,11 +25,11 @@ const int steps = 2000;
 
 #if defined TEST
 const std::string data_name = "artificiality";
-const double latent_dimensions[] = {3.0};
+const double latent_dimensions[] = {5.0};
 const double reg_parameters[] = {0.01};
 const double learning_rates[] = {0.001};
-const int cluster_size[] = {7};
-const double fuzzifier_em[] = {1.001};
+const int cluster_size[] = {3};
+const double fuzzifier_em[] = {1.201};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 0.011;
 const int missing_pattern = 4;
@@ -56,7 +56,7 @@ const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;
-const int start_missing_valu = 7000;
+const int start_missing_valu = 5000;
 const int end_missing_valu = 7000;
 const int step_missing_valu = 500;
 #elif defined BOOK

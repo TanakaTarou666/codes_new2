@@ -178,6 +178,7 @@ double TFCFMWithSGD::calculate_objective_value() {
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
+    result += reg_parameter_ * (squared_norm(w0_) + frobenius_norm(w_) + frobenius_norm(v_));
     return result;
 }
 

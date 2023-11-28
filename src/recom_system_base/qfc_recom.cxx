@@ -32,11 +32,7 @@ void QFCRecom::calculate_cluster_size_adjustments() {
         for (int k = 0; k < rs::num_users; k++) {
             tmp_denominator_factor += pow(membership_(c, k), fuzzifier_em_) * (1 - fuzzifier_lambda_ * (1 - fuzzifier_em_) * dissimilarities_(c, k));
         }
-        if (tmp_denominator_factor > 1.0e-50) {
-            denominator_factors[c] = tmp_denominator_factor;
-        } else {
-            denominator_factors[c] = 1.0e-50;
-        }
+        denominator_factors[c] = tmp_denominator_factor;
     }
     for (int c = 0; c < cluster_size_; c++) {
         double denominator = 0.0;
@@ -48,3 +44,5 @@ void QFCRecom::calculate_cluster_size_adjustments() {
         cluster_size_adjustments_[c] = 1 / denominator;
     }
 }
+
+

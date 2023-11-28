@@ -148,8 +148,8 @@ void QFCFMWithSGD::calculate_factors() {
                     w0_[c] += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err - reg_parameter_ * w0_[c]);
                     // wの更新
                     for (int a = 0; a < 2; a++) {
-                        w_(c, tmp_x(a, "index")) +=
-                            learning_rate_ * (2 * tmp_x(a) * tmp_membership_times_cluster_size_adjustments * err - reg_parameter_ * w_(c, tmp_x(a, "index")));
+                        w_(c, tmp_x(a, "index")) += learning_rate_ * (2 * tmp_x(a) * tmp_membership_times_cluster_size_adjustments * err -
+                                                                      reg_parameter_ * w_(c, tmp_x(a, "index")));
                     }
 
                     // vの更新
@@ -157,9 +157,9 @@ void QFCFMWithSGD::calculate_factors() {
                         double tmp_x_value = tmp_x(a);
                         double tmp_x_index = tmp_x(a, "index");
                         for (int factor = 0; factor < latent_dimension_; factor++) {
-                            tmp_v(tmp_x_index, factor) +=
-                                learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err * tmp_x_value * (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
-                                                  reg_parameter_ * tmp_v(tmp_x_index, factor));
+                            tmp_v(tmp_x_index, factor) += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err * tmp_x_value *
+                                                                                (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
+                                                                            reg_parameter_ * tmp_v(tmp_x_index, factor));
                         }
                     }
                 }
@@ -188,10 +188,12 @@ double QFCFMWithSGD::calculate_objective_value() {
     double result = 0;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += dissimilarities_(c, i) * pow(membership_(c, i), fuzzifier_em_) +
-                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
+            result += pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
+                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
+    result += reg_parameter_ * (squared_norm(w0_) + frobenius_norm(w_) + frobenius_norm(v_));
     return result;
 }
 
@@ -201,11 +203,13 @@ bool QFCFMWithSGD::calculate_convergence_criterion() {
     double diff =
         squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) + frobenius_norm(prev_membership_ - membership_);
     std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
-    std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
-    std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
-    std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
-    std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
-    std::cout << "a:" << cluster_size_adjustments_ << "\t";
+    // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
+    // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
+    // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
+    // for (int c = 0; c < cluster_size_; c++) {
+    // std::cout << "m:" << prev_membership_(c,0)<< "\t";
+    // }
+    std::cout << "a:" << prev_cluster_size_adjustments_ << "\t";
     std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
