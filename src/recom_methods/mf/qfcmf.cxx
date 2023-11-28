@@ -111,7 +111,7 @@ void QFCMF::set_initial_values(int seed) {
     }
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
-    cluster_size_adjustments_ = Vector(cluster_size_, 1.0 / cluster_size_, "all");
+    cluster_size_adjustments_ = Vector(cluster_size_, 1.0 / (double)cluster_size_, "all");
     for (int k = 0; k < rs::num_users; k++) {
         double tmp_Mem[cluster_size_];
         tmp_Mem[cluster_size_ - 1] = 1.0;
@@ -145,7 +145,7 @@ double QFCMF::calculate_objective_value() {
         for (int i = 0; i < rs::num_users; i++) {
             result += pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
-                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - 1);
+                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
         for (int i = 0; i < rs::num_users; i++) {
             user_factor_values_ = user_factors_[c].get_values() + latent_dimension_ * i;

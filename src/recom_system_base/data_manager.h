@@ -1,7 +1,7 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
-//#define TEST
+//#define ARTIFICIALITY
+#define TEST
 //#define BOOK
 
 namespace rs {
@@ -25,10 +25,10 @@ const int steps = 2000;
 
 #if defined TEST
 const std::string data_name = "artificiality";
-const double latent_dimensions[] = {5.0};
+const double latent_dimensions[] = {3.0};
 const double reg_parameters[] = {0.01};
 const double learning_rates[] = {0.001};
-const int cluster_size[] = {4, 5};
+const int cluster_size[] = {7};
 const double fuzzifier_em[] = {1.001};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 0.011;
@@ -52,7 +52,7 @@ const double fuzzifier_lambda[] = {10, 100, 1000};
 const double convergence_criteria = 0.011;
 const int missing_pattern = 4;
 const int num_initial_values = 4;
-const int steps = 4000;
+const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;

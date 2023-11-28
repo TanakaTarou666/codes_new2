@@ -1,11 +1,21 @@
-#include "tfcfm_sgd.h"
+#include "qfcfm_sgd.h"
 
-TFCFMWithSGD::TFCFMWithSGD(int missing_count)
-    : FMBase(missing_count), TFCRecom(missing_count), Recom(missing_count), w0_(), prev_w0_(), w_(), prev_w_(), v_(), prev_v_(), x_() {
-    method_name_ = append_current_time_if_test("TFCFM_SGD");
+QFCFMWithSGD::QFCFMWithSGD(int missing_count)
+    : FMBase(missing_count),
+      QFCRecom(missing_count),
+      TFCRecom(missing_count),
+      Recom(missing_count),
+      w0_(),
+      prev_w0_(),
+      w_(),
+      prev_w_(),
+      v_(),
+      prev_v_(),
+      x_() {
+    method_name_ = append_current_time_if_test("QFCFM_SGD");
 }
 
-void TFCFMWithSGD::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda,
+void QFCFMWithSGD::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda,
                                   double reg_parameter, double learning_rate) {
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
@@ -30,7 +40,7 @@ void TFCFMWithSGD::set_parameters(double latent_dimension_percentage, int cluste
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
 }
 
-void TFCFMWithSGD::set_initial_values(int seed) {
+void QFCFMWithSGD::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = Vector(cluster_size_, 0.0, "all");
     w_ = Matrix(cluster_size_, rs::num_users + rs::num_items, 0.0);
@@ -38,6 +48,7 @@ void TFCFMWithSGD::set_initial_values(int seed) {
     x_ = DSSTensor(sparse_missing_data_, rs::num_users + rs::num_items);
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
+    cluster_size_adjustments_ = Vector(cluster_size_, 1.0 / (double)cluster_size_, "all");
 
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
@@ -97,7 +108,7 @@ void TFCFMWithSGD::set_initial_values(int seed) {
     // }
 }
 
-void TFCFMWithSGD::calculate_factors() {
+void QFCFMWithSGD::calculate_factors() {
     double sum;
     prev_v_ = v_;
     prev_w_ = w_;
@@ -105,8 +116,9 @@ void TFCFMWithSGD::calculate_factors() {
     prev_membership_ = membership_;
     for (int c = 0; c < cluster_size_; c++) {
         Matrix tmp_v = v_[c];
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         for (int i = 0; i < rs::num_users; i++) {
-            double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+            double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
             for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
                 if (sparse_missing_data_(i, j) != 0) {
                     SparseVector tmp_x = x_(i, j);
@@ -133,20 +145,20 @@ void TFCFMWithSGD::calculate_factors() {
                     double err = (sparse_missing_data_(i, j) - prediction);
 
                     // w0の更新
-                    w0_[c] += learning_rate_ * (2 * tmp_membership * err - reg_parameter_ * w0_[c]);
+                    w0_[c] += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err - reg_parameter_ * w0_[c]);
                     // wの更新
                     for (int a = 0; a < 2; a++) {
                         w_(c, tmp_x(a, "index")) +=
-                            learning_rate_ * (2 * tmp_x(a) * tmp_membership * err - reg_parameter_ * w_(c, tmp_x(a, "index")));
+                            learning_rate_ * (2 * tmp_x(a) * tmp_membership_times_cluster_size_adjustments * err - reg_parameter_ * w_(c, tmp_x(a, "index")));
                     }
-                    
+
                     // vの更新
                     for (int a = 0; a < 2; a++) {
                         double tmp_x_value = tmp_x(a);
                         double tmp_x_index = tmp_x(a, "index");
                         for (int factor = 0; factor < latent_dimension_; factor++) {
                             tmp_v(tmp_x_index, factor) +=
-                                learning_rate_ * (2 * tmp_membership * err * tmp_x_value * (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
+                                learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err * tmp_x_value * (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
                                                   reg_parameter_ * tmp_v(tmp_x_index, factor));
                         }
                     }
@@ -168,9 +180,11 @@ void TFCFMWithSGD::calculate_factors() {
         }
     }
     calculate_membership();
+
+    calculate_cluster_size_adjustments();
 }
 
-double TFCFMWithSGD::calculate_objective_value() {
+double QFCFMWithSGD::calculate_objective_value() {
     double result = 0;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
@@ -181,7 +195,7 @@ double TFCFMWithSGD::calculate_objective_value() {
     return result;
 }
 
-bool TFCFMWithSGD::calculate_convergence_criterion() {
+bool QFCFMWithSGD::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff =
@@ -191,6 +205,7 @@ bool TFCFMWithSGD::calculate_convergence_criterion() {
     std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
     std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
     std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
+    std::cout << "a:" << cluster_size_adjustments_ << "\t";
     std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
@@ -203,11 +218,12 @@ bool TFCFMWithSGD::calculate_convergence_criterion() {
         }
     } else {
         error_detected_ = true;
+        result = true;
     }
     return result;
 }
 
-void TFCFMWithSGD::calculate_prediction() {
+void QFCFMWithSGD::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {

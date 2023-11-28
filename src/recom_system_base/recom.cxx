@@ -115,7 +115,7 @@ void Recom::train() {
                 // std::cout << ": step: " << step << std::endl;
                 break;
             }
-            if (error_detected_ == true || step == rs::steps - 1) {
+            if (step == rs::steps - 1) {
                 error_detected_ = true;
                 // std::cout << ": step: " << step << " error" << std::endl;
                 break;
