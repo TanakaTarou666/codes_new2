@@ -148,8 +148,8 @@ double TFCMF::calculate_objective_value() {
         //     }
         // }
     }
-    //result += reg_parameter_ * (user_factors__L2Norm + item_factors__L2Norm);
-    result += reg_parameter_ * (frobenius_norm(user_factors_) + frobenius_norm(item_factors_));
+    // result += reg_parameter_ * (user_factors__L2Norm + item_factors__L2Norm);
+    result += reg_parameter_ * (pow(frobenius_norm(user_factors_), 2.0) + pow(frobenius_norm(item_factors_), 2.0));
     return result;
 }
 
