@@ -41,6 +41,7 @@ Vector operator*(double lhs, const Vector& rhs);
 Vector operator/(const Vector& lhs, double rhs);
 bool operator==(const Vector& lhs, const Vector& rhs);
 bool operator!=(const Vector& lhs, const Vector& rhs);
+double squared_sum(const Vector& arg);
 double norm(const Vector& arg, int p);
 double max_norm(const Vector& arg);
 double squared_norm(const Vector& arg);

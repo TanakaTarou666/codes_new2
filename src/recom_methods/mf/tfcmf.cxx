@@ -149,7 +149,7 @@ double TFCMF::calculate_objective_value() {
         // }
     }
     // result += reg_parameter_ * (user_factors__L2Norm + item_factors__L2Norm);
-    result += reg_parameter_ * (pow(frobenius_norm(user_factors_), 2.0) + pow(frobenius_norm(item_factors_), 2.0));
+    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_));
     return result;
 }
 

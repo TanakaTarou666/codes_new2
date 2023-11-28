@@ -4,11 +4,10 @@ Vector::Vector(void) : size_(0), values_(nullptr), part_of_matrix_(false) {}
 
 Vector::Vector(double* values, int size) : values_(values), size_(size) { part_of_matrix_ = true; };
 
-
 Vector::Vector(int n) try : size_(n), values_(new double[n]), part_of_matrix_(false) {
 } catch (std::bad_alloc) {
     std::cerr << "Vector::Vector(int n) : Out of Memory" << std::endl;
-    std::cerr << "n:" <<n << std::endl;
+    std::cerr << "n:" << n << std::endl;
     throw;
 }
 
@@ -22,11 +21,11 @@ Vector::Vector(int n, double value, const char* flag) try : size_(n), values_(ne
     }
 } catch (std::bad_alloc) {
     std::cerr << "Vector::Vector(int n, double value, const char* flag) : Out of Memory" << std::endl;
-    std::cerr << "n:" <<n << std::endl;
+    std::cerr << "n:" << n << std::endl;
     throw;
 }
 
-Vector::Vector(const Vector& arg) try : size_(arg.size()), values_(new double[arg.size()]),part_of_matrix_(false) {
+Vector::Vector(const Vector& arg) try : size_(arg.size()), values_(new double[arg.size()]), part_of_matrix_(false) {
     for (int i = 0; i < size_; i++) {
         values_[i] = arg.values_[i];
     }
@@ -54,7 +53,9 @@ Vector& Vector::operator=(const Vector& rhs) {
     return *this;
 }
 
-Vector::~Vector(void) { if (part_of_matrix_ == false) delete[] values_; }
+Vector::~Vector(void) {
+    if (part_of_matrix_ == false) delete[] values_;
+}
 
 int Vector::size(void) const { return size_; }
 
@@ -169,6 +170,14 @@ bool operator!=(const Vector& lhs, const Vector& rhs) {
     return false;
 }
 
+double squared_sum(const Vector& arg) {
+    double result = 0.0;
+    for (int i = 0; i < arg.size(); i++) {
+        result += arg[i] * arg[i];
+    }
+    return result;
+}
+
 double norm(const Vector& arg, int p) {
     double result = 0.0;
     for (int i = 0; i < arg.size(); i++) {
@@ -190,10 +199,5 @@ double max_norm(const Vector& arg) {
 }
 
 double squared_norm(const Vector& arg) {
-    double result = 0.0;
-    for (int i = 0; i < arg.size(); i++) {
-        result += arg[i] * arg[i];
-    }
-    return sqrt(result);
+    return sqrt(squared_sum(arg));
 }
- 

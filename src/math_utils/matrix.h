@@ -37,6 +37,7 @@ Matrix operator*(Matrix &lhs, Matrix &rhs);
 bool operator==(const Matrix &lhs, const Matrix &rhs);
 bool operator!=(const Matrix &lhs, const Matrix &rhs);
 Matrix operator*(double factor, const Matrix &rhs);
+double squared_sum(const Matrix &arg);
 double frobenius_norm(const Matrix &arg);
 Matrix transpose(const Matrix &arg);
 

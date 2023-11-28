@@ -141,21 +141,14 @@ Tensor operator-(Tensor& lhs, Tensor& rhs) {
     return result;
 }
 
-double frobenius_norm(const Tensor& arg) {
-    // double result = 0.0;
-    // for (int i = 0; i < arg.heights(); i++) {
-    //     for (int row = 0; row < arg.rows(); row++) {
-    //         for (int col = 0; col < arg.cols(); col++) {
-    //             result += arg[i](row, col) * arg[i](row, col);
-    //         }
-    //     }
-    // }
-    //return sqrt(result);
+double squared_sum(const Tensor& arg){
     double result = 0.0;
-    double tmp=0;
     for (int i = 0; i < arg.heights(); i++) {
-        tmp= frobenius_norm(arg[i]);
-        result += tmp*tmp;
+        result+= squared_sum(arg[i]);
     }
-    return sqrt(result);
+    return result;
+}
+
+double frobenius_norm(const Tensor& arg) {
+    return sqrt(squared_sum(arg));
 }

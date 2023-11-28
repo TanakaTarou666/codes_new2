@@ -250,14 +250,18 @@ bool operator!=(const Matrix& lhs, const Matrix& rhs) {
     return false;
 }
 
-double frobenius_norm(const Matrix& arg) {
+double squared_sum(const Matrix &arg){
     double result = 0.0;
     for (int row = 0; row < arg.rows(); row++) {
         for (int col = 0; col < arg.cols(); col++) {
             result += arg(row, col) * arg(row, col);
         }
     }
-    return sqrt(result);
+    return result;
+}
+
+double frobenius_norm(const Matrix& arg) {
+    return sqrt(squared_sum(arg));
 }
 
 Matrix transpose(const Matrix& arg) {

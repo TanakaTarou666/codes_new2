@@ -148,7 +148,7 @@ double QFCMF::calculate_objective_value() {
                           (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
-    result += reg_parameter_ * (pow(frobenius_norm(user_factors_), 2.0) + pow(frobenius_norm(item_factors_), 2.0));
+    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_));
     return result;
 }
 

@@ -31,7 +31,7 @@ class Tensor {
 };
 Tensor operator+(Tensor& lhs, Tensor& rhs);
 Tensor operator-(Tensor& lhs, Tensor& rhs);
-// 各要素を2乗し足し合わせたものを平方根
+double squared_sum(const Tensor& arg);
 double frobenius_norm(const Tensor& arg);
 
 

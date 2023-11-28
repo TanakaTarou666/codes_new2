@@ -90,19 +90,8 @@ double MF::calculate_objective_value() {
                 result += err * err;
             }
         }
-        for (int k = 0; k < latent_dimension_; k++) {
-            P_L2Norm += user_factor_values_[k] * user_factor_values_[k];
-        }
-        user_factor_values_ += latent_dimension_;
     }
-    item_factor_values_ = item_factors_.get_values();
-    for (int j = 0; j < item_factors_.rows(); j++) {
-        for (int k = 0; k < latent_dimension_; k++) {
-            Q_L2Norm += item_factor_values_[k] * item_factor_values_[k];
-        }
-        item_factor_values_ += latent_dimension_;
-    }
-    result += (reg_parameter_ / 2.0) * (P_L2Norm + Q_L2Norm);
+    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_));
     return result;
 }
 
