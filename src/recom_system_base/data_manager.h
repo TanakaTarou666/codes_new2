@@ -1,7 +1,7 @@
 #include <iomanip>
 
-//#define ARTIFICIALITY
-#define TEST
+#define ARTIFICIALITY
+//#define TEST
 //#define BOOK
 
 namespace rs {
