@@ -133,7 +133,7 @@ double TFCMF::calculate_objective_value() {
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
-                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
         for (int i = 0; i < rs::num_users; i++) {
             user_factor_values_ = user_factors_[c].get_values() + latent_dimension_ * i;

@@ -1,4 +1,4 @@
-files=("tfcfm_sgd")
+files=("qfcfm_sgd") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
 for file in "${files[@]}"; do #
