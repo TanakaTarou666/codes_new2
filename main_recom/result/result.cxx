@@ -5,10 +5,10 @@
 #include "../../src/recom_methods/mf/tfcmf.h"
 #include "../../src/recom_methods/fm_sgd/tfcfm_sgd.h"
 
-// #define __MF__
-// #define __TFCMF__
+ #define __MF__
+ #define __TFCMF__
 // #define __FM_SGD__
-#define __TFCFM_SGD__
+//#define __TFCFM_SGD__
 // #define __FM_ALS__
 
 

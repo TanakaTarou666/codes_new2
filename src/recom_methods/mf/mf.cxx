@@ -74,19 +74,14 @@ void MF::calculate_factors() {
 
 double MF::calculate_objective_value() {
     double result = 0.0;
-    double P_L2Norm = 0.0, Q_L2Norm = 0.0;
     user_factor_values_ = user_factors_.get_values();
     item_factor_values_ = item_factors_.get_values();
     for (int i = 0; i < user_factors_.rows(); i++) {
         for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
             if (sparse_missing_data_(i, j) != 0) {
-                item_factor_values_ =
-                    item_factors_.get_values() + sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
                 // e = r - p * q
                 double err = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
-                for (int k = 0; k < latent_dimension_; k++) {
-                    err -= user_factor_values_[k] * item_factor_values_[k];
-                }
+                err -= user_factors_[i]*item_factors_[sparse_missing_data_(i,j, "index")];
                 result += err * err;
             }
         }
@@ -101,8 +96,10 @@ bool MF::calculate_convergence_criterion() {
     double diff = frobenius_norm((prev_user_factors_ - user_factors_)) + frobenius_norm(prev_item_factors_ - item_factors_);
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
+    // std::cout << "L:" << calculate_objective_value() << "\t";
+    // std::cout << "diff:" << diff << "\t" << std::endl;
 #endif
     if (std::isfinite(diff)) {
         if (diff < rs::convergence_criteria) {
@@ -111,13 +108,12 @@ bool MF::calculate_convergence_criterion() {
     } else {
         error_detected_ = true;
     }
-
     return result;
 }
 
 void MF::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         // 欠損箇所だけ計算
-        prediction_[index] = user_factors_[missing_data_indices_(index,0)] * item_factors_[missing_data_indices_(index,1)];
+        prediction_[index] = user_factors_[missing_data_indices_(index,0)] *  item_factors_[missing_data_indices_(index,1)];
     }
 }

@@ -92,6 +92,7 @@ void TFCFMWithALS::set_initial_values(int seed) {
     //                   << std::endl;
     //     }
     // }
+    precompute();
 }
 
 void TFCFMWithALS::precompute() {

@@ -161,7 +161,7 @@ bool TFCMF::calculate_convergence_criterion() {
     std::cout << " diff:" << diff << std::endl;
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

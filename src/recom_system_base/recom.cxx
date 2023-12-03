@@ -110,13 +110,13 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            // std::cout << ": step: " << step;
+            std::cout << ": step: " << step<< "\t";
             if (calculate_convergence_criterion()) {
                 // std::cout << ": step: " << step << std::endl;
                 break;
             }
             if (step == rs::steps - 1) {
-                error_detected_ = true;
+                //error_detected_ = true;
                 // std::cout << ": step: " << step << " error" << std::endl;
                 break;
             }
@@ -154,6 +154,7 @@ void Recom::calculate_mae(int current_missing_pattern) {
     for (int m = 0; m < num_missing_value_; m++) {
         result += fabs(sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m]) - prediction_[m]);
     }
+    
     mae_[current_missing_pattern] = result / (double)num_missing_value_;
 
     std::ofstream ofs(dirs_[0] + "/" + method_name_ + "MAE.txt", std::ios::app);
@@ -479,13 +480,6 @@ std::vector<std::string> mkdir(std::vector<std::string> methods, int num_missing
 }
 
 std::vector<std::string> mkdir_result(std::vector<std::string> dirs, std::vector<double> parameters, int num_missing_value) {
-#if !defined ARTIFICIALITY
-    if (rs::num_users > rs::num_items) {
-        parameters[0] = std::round(rs::num_items * parameters[0] / 100);
-    } else {
-        parameters[0] = std::round(rs::num_users * parameters[0] / 100);
-    }
-#endif
     std::vector<std::string> v;
     std::string c_p = std::filesystem::current_path();
     c_p = c_p + "/../../RESULT/" + dirs[0];

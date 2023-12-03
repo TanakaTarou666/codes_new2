@@ -15,7 +15,7 @@ class TFCFMWithALS : virtual public FMBase, virtual public TFCRecom{
     TFCFMWithALS(int missing_count);
     void set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
     void set_initial_values(int seed) override;
-    void precompute() override;
+    void precompute();
     void calculate_factors() override;
     double calculate_objective_value() override;
     bool calculate_convergence_criterion() override;

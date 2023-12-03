@@ -63,6 +63,7 @@ void FMWithALS::set_initial_values(int seed) {
     //                   << std::endl;
     //     }
     // }
+    precompute();
 }
 
 void FMWithALS::precompute() {
@@ -192,6 +193,7 @@ double FMWithALS::calculate_objective_value() {
             }
         }
     }
+    result += reg_parameter_ * (w0_ + squared_sum(w_) + squared_sum(v_));
     return result;
 }
 

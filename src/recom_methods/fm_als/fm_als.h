@@ -18,7 +18,7 @@ class FMWithALS : virtual public FMBase {
     FMWithALS(int missing_count);
     void set_parameters(double latent_dimension_percentage,double reg_parameter);
     void set_initial_values(int seed) override;
-    void precompute() override;
+    void precompute();
     void calculate_factors() override;
     double calculate_objective_value() override;
     bool calculate_convergence_criterion() override;

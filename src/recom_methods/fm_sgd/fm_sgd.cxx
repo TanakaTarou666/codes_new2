@@ -127,7 +127,7 @@ double FMWithSGD::calculate_objective_value() {
             }
         }
     }
-    result += reg_parameter_ * (w0_ + pow(squared_norm(w_), 2.0) + pow(frobenius_norm(v_), 2.0));
+    result += reg_parameter_ * (w0_ + squared_sum(w_) + squared_sum(v_));
     return result;
 }
 
@@ -144,6 +144,8 @@ bool FMWithSGD::calculate_convergence_criterion() {
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
     prev_objective_value_ = objective_value_;
+        std::cout << "L:" << calculate_objective_value() << "\t";
+    std::cout << "diff:" << diff << "\t" << std::endl;
 #endif
     if (std::isfinite(diff)) {
         if (diff < rs::convergence_criteria) {
@@ -158,11 +160,13 @@ bool FMWithSGD::calculate_convergence_criterion() {
 void FMWithSGD::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
-        prediction_[index] += predict_y(x_(missing_data_indices_(index, 0), missing_data_indices_(index, 1)), w0_, w_, v_);
+        // std::cout << "m:"<< missing_data_indices_(index, 0)<<":"<<sparse_missing_data_cols_[index] << std::endl;
+        prediction_[index] = predict_y(x_(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]), w0_, w_, v_);
         // std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:"
         //           << sparse_correct_data_(missing_data_indices_(index,0),
-        //                                   missing_data_indices_(index,1))
+        //                                   sparse_missing_data_cols_[index])
         //           << std::endl;
     }
+    std::cout << "end"<< "\t" << std::endl;
 }

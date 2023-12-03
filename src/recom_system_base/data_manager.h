@@ -1,7 +1,8 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
+//#define ARTIFICIALITY
 //#define TEST
+#define MOVIE10M
 //#define BOOK
 
 namespace rs {
@@ -17,7 +18,7 @@ const double learning_rates[] = {0.001};
 const int cluster_size[] = {2, 3, 4, 5};
 const double fuzzifier_em[] = {1.001, 1.1 ,1.9};
 const double fuzzifier_lambda[] = {1000};
-const double convergence_criteria = 1.0e-5;
+const double convergence_criteria = 1.0e-4;
 const int missing_pattern = 5;
 const int num_initial_values = 4;
 const int steps = 2000;
