@@ -41,6 +41,7 @@ void FMWithALS::set_initial_values(int seed) {
             std::uniform_real_distribution<> rand_v(-0.01, 0.01);
             v_(n, k) = rand_v(mt);
             // v_(n, k) = 0.01 * k + 0.01 * n;
+            v_(n, k)=1.0;
             seed++;
         }
     }
@@ -136,50 +137,50 @@ void FMWithALS::calculate_factors() {
     }
 
     // 2-way interactions
-    for (int f = 0; f < latent_dimension_; ++f) {
-        double va[v_.rows()] = {};
-        for (int a = 0; a < 2; ++a) {
-            double h_value[e_.size()] = {};
-            l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        h_value[l] = -x_(i, j)(a) * (x_(i, j)(a) * v_(x_(i, j)(a, "index"), f) - q_(l, f));
-                        l++;
-                    }
-                }
-            }
+    // for (int f = 0; f < latent_dimension_; ++f) {
+    //     double va[v_.rows()] = {};
+    //     for (int a = 0; a < 2; ++a) {
+    //         double h_value[e_.size()] = {};
+    //         l = 0;
+    //         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+    //             for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+    //                 if (sparse_missing_data_(i, j) != 0) {
+    //                     h_value[l] = -x_(i, j)(a) * (x_(i, j)(a) * v_(x_(i, j)(a, "index"), f) - q_(l, f));
+    //                     l++;
+    //                 }
+    //             }
+    //         }
 
-            double numerator_v[v_.rows()] = {};
-            double denominator_v[v_.rows()] = {};
-            l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        numerator_v[x_(i, j)(a, "index")] += (e_[l] - v_(x_(i, j)(a, "index"), f) * h_value[l]) * h_value[l];
-                        denominator_v[x_(i, j)(a, "index")] += h_value[l] * h_value[l];
-                        l++;
-                    }
-                }
-            }
-            for (int a = 0; a < v_.rows(); ++a) {
-                if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
-            }
-            l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        e_[l] += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * h_value[l];
-                        q_(l, f) += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * x_(i, j)(a);
-                        l++;
-                    }
-                }
-            }
-        }
-        for (int a = 0; a < v_.rows(); ++a) {
-            v_(a, f) = va[a];
-        }
-    }
+    //         double numerator_v[v_.rows()] = {};
+    //         double denominator_v[v_.rows()] = {};
+    //         l = 0;
+    //         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+    //             for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+    //                 if (sparse_missing_data_(i, j) != 0) {
+    //                     numerator_v[x_(i, j)(a, "index")] += (e_[l] - v_(x_(i, j)(a, "index"), f) * h_value[l]) * h_value[l];
+    //                     denominator_v[x_(i, j)(a, "index")] += h_value[l] * h_value[l];
+    //                     l++;
+    //                 }
+    //             }
+    //         }
+    //         for (int a = 0; a < v_.rows(); ++a) {
+    //             if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
+    //         }
+    //         l = 0;
+    //         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+    //             for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+    //                 if (sparse_missing_data_(i, j) != 0) {
+    //                     e_[l] += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * h_value[l];
+    //                     q_(l, f) += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * x_(i, j)(a);
+    //                     l++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     for (int a = 0; a < v_.rows(); ++a) {
+    //         v_(a, f) = va[a];
+    //     }
+    // }
 }
 
 double FMWithALS::calculate_objective_value() {
@@ -193,7 +194,7 @@ double FMWithALS::calculate_objective_value() {
             }
         }
     }
-    result += reg_parameter_ * (w0_ + squared_sum(w_) + squared_sum(v_));
+    //result += reg_parameter_ * (fabs(w0_) + squared_sum(w_) + squared_sum(v_));
     return result;
 }
 
@@ -201,11 +202,11 @@ bool FMWithALS::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = abs(prev_w0_ - w0_) + squared_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_);
-    // std::cout << "L:" << calculate_objective_value() << "\t";
-    // std::cout << "diff:" << diff << "\t" << std::endl;
-    // std::cout << "w0:" << abs(prev_w0_ - w0_) << std::endl;
-    // std::cout << "w:" << squared_norm(prev_w_ - w_)  << std::endl;
-    // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << std::endl;
+    std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
+    std::cout << "w0:" << abs(prev_w0_ - w0_)<< "\t";
+    std::cout << "w:" << prev_w_[0] << "\t";
+    std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
+    std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;

@@ -127,7 +127,7 @@ double FMWithSGD::calculate_objective_value() {
             }
         }
     }
-    result += reg_parameter_ * (w0_ + squared_sum(w_) + squared_sum(v_));
+    result += reg_parameter_ * (fabs(w0_) + squared_sum(w_) + squared_sum(v_));
     return result;
 }
 

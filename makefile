@@ -34,7 +34,7 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 # fm_als
 .out/fm_als_$(ARG): src/recom_methods/fm_als/fm_als.cxx main_recom/fm_als/fm_als_main.cxx $(fm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
-.out/tfcfm_als: src/recom_methods/fm_als/tfcfm_als.cxx main_recom/fm_als/tfcfm_als_main.cxx $(tfcfm_recom)
+.out/tfcfm_als_$(ARG): src/recom_methods/fm_als/tfcfm_als.cxx main_recom/fm_als/tfcfm_als_main.cxx $(tfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	
 # fm_sgd
 .out/fm_sgd_$(ARG): src/recom_methods/fm_sgd/fm_sgd.cxx main_recom/fm_sgd/fm_sgd_main.cxx $(fm_recom)

@@ -1,8 +1,8 @@
 #include <iomanip>
 
 //#define ARTIFICIALITY
-//#define TEST
-#define MOVIE10M
+#define TEST
+//#define MOVIE10M
 //#define BOOK
 
 namespace rs {
