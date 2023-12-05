@@ -1,9 +1,9 @@
 #include <iomanip>
 
-//#define ARTIFICIALITY
+// #define ARTIFICIALITY
 #define TEST
-//#define MOVIE10M
-//#define BOOK
+// #define MOVIE10M
+// #define BOOK
 
 namespace rs {
 
@@ -12,11 +12,11 @@ namespace rs {
 #endif
 
 #if !defined ARTIFICIALITY
-const double latent_dimensions[] = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+const double latent_dimensions[] = {1.0, 2.0, 3.0};
 const double reg_parameters[] = {0.01, 0.05, 0.09, 0.13};
 const double learning_rates[] = {0.001};
 const int cluster_size[] = {2, 3, 4, 5};
-const double fuzzifier_em[] = {1.001, 1.1 ,1.9};
+const double fuzzifier_em[] = {1.001, 1.1, 1.5, 2.3};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 1.0e-4;
 const int missing_pattern = 5;

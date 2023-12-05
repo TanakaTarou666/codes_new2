@@ -200,8 +200,8 @@ double QFCFMWithSGD::calculate_objective_value() {
 bool QFCFMWithSGD::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
-    double diff =
-        squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) + frobenius_norm(prev_membership_ - membership_);
+    double diff = squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) +
+                  frobenius_norm(prev_membership_ - membership_) + frobenius_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
     std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
     // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
     // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
