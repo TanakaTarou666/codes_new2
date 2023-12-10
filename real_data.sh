@@ -1,5 +1,5 @@
 #files=("mf" "tfcmf") #
-files=("tfcfm_sgd" "qfcfm_sgd") #
+files=("fm_sgd" "tfcfm_sgd" "qfcfm_sgd") #
 #files=("tfcfm_sgd") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
@@ -14,7 +14,7 @@ for file in "${files[@]}"; do                                           #
         taskset -c $((core_count + i))-$((core_count + i)) ".out/${file}_$((core_count + i))" $i $i #
       } &                                                                                           #
     done                                                                                            #
-    core_count=$((core_count + 3))                                                                             #
+    core_count=$((core_count + 3))                                                                  #
   }                                                                                                 #
 done                                                                                                #
 
