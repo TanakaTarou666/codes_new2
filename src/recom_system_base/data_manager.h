@@ -105,8 +105,16 @@ const std::string data_name = "sushi";
 const int num_users = 5000;
 const int num_items = 100;
 const double max_value = 5.0;
-const int start_missing_valu = 40000;
-const int end_missing_valu = 40000;
+const int start_missing_valu = 20000;
+const int end_missing_valu = 20000;
+const int step_missing_valu = 2000;
+#elif defined JESTER
+const std::string data_name = "jester";
+const int num_users = 2916;
+const int num_items = 140;
+const double max_value = 21.0;
+const int start_missing_valu = 20000;
+const int end_missing_valu = 20000;
 const int step_missing_valu = 2000;
 #elif defined NETFLIX
 const std::string data_name = "netflix";
