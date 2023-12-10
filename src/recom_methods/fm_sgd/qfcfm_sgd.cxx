@@ -201,7 +201,7 @@ bool QFCFMWithSGD::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) +
-                  frobenius_norm(prev_membership_ - membership_) + frobenius_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
+                  frobenius_norm(prev_membership_ - membership_) + squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
     std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
     // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
     // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
@@ -232,9 +232,7 @@ void QFCFMWithSGD::calculate_prediction() {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {
             prediction_[index] += membership_(c, missing_data_indices_(index, 0)) *
-                                  predict_y(x_(missing_data_indices_(index, 0), missing_data_indices_(index, 1)), w0_[c], w_[c], v_[c]);
+                                  predict_y(x_(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]), w0_[c], w_[c], v_[c]);
         }
-        // std::cout << "Prediction:" << prediction_[index]
-        //           << " SparseCorrectData:" << sparse_correct_data_(missing_data_indices_[index][0], missing_data_indices_[index][1]) << std::endl;
     }
 }

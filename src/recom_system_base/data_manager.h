@@ -1,9 +1,9 @@
 #include <iomanip>
 
-// #define ARTIFICIALITY
-#define TEST
-// #define MOVIE10M
-// #define BOOK
+#define ARTIFICIALITY
+//#define TEST
+//#define MOVIE
+//#define BOOK
 
 namespace rs {
 
@@ -26,11 +26,11 @@ const int steps = 2000;
 
 #if defined TEST
 const std::string data_name = "artificiality";
-const double latent_dimensions[] = {5.0};
+const double latent_dimensions[] = {2.0};
 const double reg_parameters[] = {0.01};
 const double learning_rates[] = {0.001};
-const int cluster_size[] = {3};
-const double fuzzifier_em[] = {1.201};
+const int cluster_size[] = {2};
+const double fuzzifier_em[] = {1.001};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 0.011;
 const int missing_pattern = 4;

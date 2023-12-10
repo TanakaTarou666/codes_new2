@@ -2,7 +2,7 @@
 
 TFCFMWithALS::TFCFMWithALS(int missing_count)
     : FMBase(missing_count), TFCRecom(missing_count), Recom(missing_count), w0_(), prev_w0_(), w_(), prev_w_(), v_(), prev_v_(), e_(), q_(), x_() {
-    method_name_ = "TFCFM_ALS";
+    method_name_ = append_current_time_if_test("TFCFM_ALS");
 }
 
 void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda,
@@ -45,9 +45,9 @@ void TFCFMWithALS::set_initial_values(int seed) {
             for (int k = 0; k < latent_dimension_; k++) {
                 mt.seed(seed);
                 // ランダムに値生成
-                std::uniform_real_distribution<> rand_v(0.0, 0.001);
+                std::uniform_real_distribution<> rand_v(-0.01, 0.01);
                 v_[c](n, k) = rand_v(mt);
-                v_[c](n, k) = 1.0;
+                //v_[c](n, k) = 1.0;
             }
         }
     }
@@ -84,7 +84,7 @@ void TFCFMWithALS::set_initial_values(int seed) {
             seed++;
         }
         for (int i = 0; i < cluster_size_; i++) {
-            membership_(i, k) = 1.0;  // tmp_Mem[i];
+            membership_(i, k) = tmp_Mem[i];
         }
     }
 
@@ -161,7 +161,7 @@ void TFCFMWithALS::calculate_factors() {
                 }
             }
             for (int i = 0; i < w_.cols(); ++i) {
-                if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i]+reg_parameter_);
+                if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
             }
             l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
@@ -179,6 +179,53 @@ void TFCFMWithALS::calculate_factors() {
     }
 
     // 2-way interactions
+    for (int c = 0; c < cluster_size_; ++c) {
+        for (int f = 0; f < latent_dimension_; ++f) {
+            double va[v_.rows()] = {};
+            for (int a = 0; a < 2; ++a) {
+                double h_value[e_.cols()] = {};
+                int l = 0;
+                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+                    for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                        if (sparse_missing_data_(i, j) != 0) {
+                            h_value[l] = -x_(i, j)(a) * (x_(i, j)(a) * v_[c](x_(i, j)(a, "index"), f) - q_[c](l, f));
+                            l++;
+                        }
+                    }
+                }
+                double numerator_v[v_.rows()] = {};
+                double denominator_v[v_.rows()] = {};
+                l = 0;
+                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+                    double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+                    for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                        if (sparse_missing_data_(i, j) != 0) {
+                            numerator_v[x_(i, j)(a, "index")] +=
+                                tmp_membership * (e_(c, l) - v_[c](x_(i, j)(a, "index"), f) * h_value[l]) * h_value[l];
+                            denominator_v[x_(i, j)(a, "index")] += tmp_membership * h_value[l] * h_value[l];
+                            l++;
+                        }
+                    }
+                }
+                for (int a = 0; a < v_.rows(); ++a) {
+                    if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
+                }
+                l = 0;
+                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+                    for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                        if (sparse_missing_data_(i, j) != 0) {
+                            e_(c, l) += (va[x_(i, j)(a, "index")] - v_[c](x_(i, j)(a, "index"), f)) * h_value[l];
+                            q_[c](l, f) += (va[x_(i, j)(a, "index")] - v_[c](x_(i, j)(a, "index"), f)) * x_(i, j)(a);
+                            l++;
+                        }
+                    }
+                }
+            }
+            for (int a = 0; a < v_.rows(); ++a) {
+                v_[c](a, f) = va[a];
+            }
+        }
+    }
 
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
@@ -192,17 +239,18 @@ void TFCFMWithALS::calculate_factors() {
             }
         }
     }
-    // calculate_membership();
+    calculate_membership();
 }
 
 double TFCFMWithALS::calculate_objective_value() {
     double result = 0.0;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += /*pow(membership_(c,i), fuzzifier_em_)**/ dissimilarities_(c, i);
-            //+1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c,i), fuzzifier_em_) - 1);
+            result += pow(membership_(c, i), fuzzifier_em_)* dissimilarities_(c, i)
+            + 1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
         }
     }
+    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_));
     return result;
 }
 
@@ -210,12 +258,12 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) +
-                  frobenius_norm(prev_v_ - v_);  // + frobenius_norm(prev_membership_ - membership_);
+                  frobenius_norm(prev_v_ - v_)+ frobenius_norm(prev_membership_ - membership_);
     std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
     std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
-    std::cout << "w:" << prev_w_(0, 0) << "\t";
+    std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
     std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
-    // std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
+    std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
     std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
@@ -236,8 +284,8 @@ void TFCFMWithALS::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {
-            prediction_[index] += membership_[c][missing_data_indices_[index][0]] *
-                                  predict_y(x_(missing_data_indices_[index][0], missing_data_indices_[index][1]), w0_[c], w_[c], v_[c]);
+            prediction_[index] += membership_(c,missing_data_indices_(index,0)) *
+                                  predict_y(x_(missing_data_indices_(index,0), sparse_missing_data_cols_[index]), w0_[c], w_[c], v_[c]);
         }
         // std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:" << sparse_correct_data_(missing_data_indices_[index][0], missing_data_indices_[index][1]) << std::endl;

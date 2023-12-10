@@ -110,14 +110,14 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            std::cout << ": step: " << step<< "\t";
+            std::cout << ": step: " << step << "\t";
             if (calculate_convergence_criterion()) {
                 // std::cout << ": step: " << step << std::endl;
                 break;
             }
             if (step == rs::steps - 1) {
-                //error_detected_ = true;
-                // std::cout << ": step: " << step << " error" << std::endl;
+                // error_detected_ = true;
+                //  std::cout << ": step: " << step << " error" << std::endl;
                 break;
             }
         }
@@ -154,7 +154,7 @@ void Recom::calculate_mae(int current_missing_pattern) {
     for (int m = 0; m < num_missing_value_; m++) {
         result += fabs(sparse_correct_data_(missing_data_indices_(m, 0), sparse_missing_data_cols_[m]) - prediction_[m]);
     }
-    
+
     mae_[current_missing_pattern] = result / (double)num_missing_value_;
 
     std::ofstream ofs(dirs_[0] + "/" + method_name_ + "MAE.txt", std::ios::app);
@@ -391,14 +391,14 @@ void Recom::output_high_score_in_tally_result() {
         std::cerr << "ファイルopen失敗: " << directory_name_of_auc + input_file_name_of_auc << std::endl;
     } else {
         std::cerr << "ファイルopen成功: " << directory_name_of_auc + input_file_name_of_auc << std::endl;
-        //AUCのファイルの読み取り
+        // AUCのファイルの読み取り
         double best_sum_auc = 0.0;
-        Vector best_auc_line(rs::missing_pattern+(int)parameters_.size());
+        Vector best_auc_line(rs::missing_pattern + (int)parameters_.size());
         for (std::string str; std::getline(ifs_auc, str);) {
             std::istringstream stream(str);
             int j = 0;
             double tmp_sum_auc = 0;
-            Vector tmp_auc_line(rs::missing_pattern+(int)parameters_.size());
+            Vector tmp_auc_line(rs::missing_pattern + (int)parameters_.size());
             for (std::string tmp; getline(stream, tmp, '\t'); j++) {
                 tmp_auc_line[j] = std::stod(tmp);
                 if (j < rs::missing_pattern) tmp_sum_auc += std::stod(tmp);
@@ -409,10 +409,10 @@ void Recom::output_high_score_in_tally_result() {
             }
         }
         // 最高AUCの値とパラメータをファイルに出力
-        std::ofstream ofs_auc(directory_name_of_auc + "/../"+method_name_+"_result.txt", std::ios::app);
+        std::ofstream ofs_auc(directory_name_of_auc + "/../" + rs::data_name + "_" + method_name_ + "_result.txt", std::ios::app);
         if (ofs_auc) {
             ofs_auc << num_missing_value_ << "\t";
-            for (int k = 0; k < rs::missing_pattern+(int)parameters_.size(); ++k) {
+            for (int k = 0; k < rs::missing_pattern + (int)parameters_.size(); ++k) {
                 ofs_auc << best_auc_line[k] << "\t";
             }
             ofs_auc << std::endl;
@@ -428,14 +428,14 @@ void Recom::output_high_score_in_tally_result() {
         std::cerr << "ファイルopen失敗: " << directory_name_of_mae + input_file_name_of_mae << std::endl;
     } else {
         std::cerr << "ファイルopen成功: " << directory_name_of_mae + input_file_name_of_mae << std::endl;
-        //MAEのファイルの読み取り
+        // MAEのファイルの読み取り
         double best_sum_mae = DBL_MAX;
-        Vector best_mae_line(rs::missing_pattern+(int)parameters_.size());
+        Vector best_mae_line(rs::missing_pattern + (int)parameters_.size());
         for (std::string str; std::getline(ifs_mae, str);) {
             std::istringstream stream(str);
             int j = 0;
             double tmp_sum_mae = 0;
-            Vector tmp_mae_line(rs::missing_pattern+(int)parameters_.size());
+            Vector tmp_mae_line(rs::missing_pattern + (int)parameters_.size());
             for (std::string tmp; getline(stream, tmp, '\t'); j++) {
                 tmp_mae_line[j] = std::stod(tmp);
                 if (j < rs::missing_pattern) tmp_sum_mae += std::stod(tmp);
@@ -446,10 +446,10 @@ void Recom::output_high_score_in_tally_result() {
             }
         }
         // 最高AUCの値とパラメータをファイルに出力
-        std::ofstream ofs_mae(directory_name_of_mae + "/../"+method_name_+"_result.txt", std::ios::app);
+        std::ofstream ofs_mae(directory_name_of_mae + "/../" + rs::data_name + "_" + method_name_ + "_result.txt", std::ios::app);
         if (ofs_mae) {
             ofs_mae << num_missing_value_ << "\t";
-            for (int k = 0; k < rs::missing_pattern+(int)parameters_.size(); ++k) {
+            for (int k = 0; k < rs::missing_pattern + (int)parameters_.size(); ++k) {
                 ofs_mae << best_mae_line[k] << "\t";
             }
             ofs_mae << std::endl;
