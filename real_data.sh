@@ -1,5 +1,5 @@
 #files=("mf" "tfcmf") #
-files=("fm_sgd" "tfcfm_sgd" "qfcfm_sgd") #
+files=("tfcfm_sgd" "qfcfm_sgd") #
 #files=("tfcfm_sgd") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
