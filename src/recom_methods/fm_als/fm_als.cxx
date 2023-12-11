@@ -27,39 +27,39 @@ void FMWithALS::set_parameters(double latent_dimension_percentage, double reg_pa
 void FMWithALS::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = 0.0;
-    w_ = Vector(rs::num_users + rs::num_items, 0.0, "all");
-    v_ = Matrix(rs::num_users + rs::num_items, latent_dimension_);
+    w_ = Vector(sum_users_items, 0.0, "all");
+    v_ = Matrix(latent_dimension_, sum_users_items);
     e_ = Vector(sparse_missing_data_.nnz() - num_missing_value_, 0.0, "all");
-    q_ = Matrix(sparse_missing_data_.nnz() - num_missing_value_, latent_dimension_);
-    x_ = DSSTensor(sparse_missing_data_, rs::num_users + rs::num_items);
+    q_ = Matrix(latent_dimension_,sparse_missing_data_.nnz() - num_missing_value_);
+    x_ = DSSTensor(sparse_missing_data_, sum_users_items);
 
     std::mt19937_64 mt;
-    for (int n = 0; n < rs::num_users + rs::num_items; n++) {
+    for (int n = 0; n < sum_users_items; n++) {
         for (int k = 0; k < latent_dimension_; k++) {
             mt.seed(seed);
             // ランダムに値生成
             std::uniform_real_distribution<> rand_v(-0.01, 0.01);
-            v_(n, k) = rand_v(mt);
+            v_(k, n) = rand_v(mt);
             // v_(n, k) = 0.01 * k + 0.01 * n;
-            //v_(n, k) = 1.0;
+            // v_(n, k) = 1.0;
             seed++;
         }
     }
 
     for (int i = 0; i < rs::num_users; i++) {
-        for (int j = 0; j < x_(i, "row"); j++) {
+        for (int j = 0; j < x_.nnz(i); j++) {
             SparseVector x_element(rs::num_items, 2);
             x_element(0) = 1;
-            x_element(0, "index") = i;
+            x_element.dense_index(0) = i;
             x_element(1) = 1;
-            x_element(1, "index") = rs::num_users + x_(i, j, "index");
+            x_element.dense_index(1) = rs::num_users + x_.dense_index(i, j);
             x_(i, j) = x_element;
         }
     }
 
     // データ表示
     // for (int i = 0; i < rs::num_users; i++) {
-    //     for (int j = 0; j < x_(i, "row"); j++) {
+    //     for (int j = 0; j < x_.nnz(i); j++) {
     //         std::cout << "i:" << i << " j:" << j << " : " << x_(i, j)
     //                   << std::endl;
     //     }
@@ -69,14 +69,16 @@ void FMWithALS::set_initial_values(int seed) {
 
 void FMWithALS::precompute() {
     int l = 0;
+    SparseVector tmp_x;
     for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-        for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
             if (sparse_missing_data_(i, j) != 0) {
-                e_[l] = predict_y(x_(i, j), w0_, w_, v_) - sparse_missing_data_(i, j);
+                tmp_x = x_(i, j);
+                e_[l] = predict_y(tmp_x, w0_, w_, v_) - sparse_missing_data_(i, j);
                 for (int f = 0; f < latent_dimension_; ++f) {
-                    q_(l, f) = 0.0;
-                    for (int j_ = 0; j_ < x_(i, j).nnz(); ++j_) {
-                        q_(l, f) += x_(i, j)(j_) * v_(x_(i, j)(j_, "index"), f);
+                    q_(f, l) = 0.0;
+                    for (int j_ = 0; j_ < tmp_x.nnz(); ++j_) {
+                        q_(f, l) += tmp_x(j_) * v_(f, tmp_x.dense_index(j_));
                     }
                 }
                 l++;
@@ -90,10 +92,11 @@ void FMWithALS::calculate_factors() {
     prev_v_ = v_;
     prev_w_ = w_;
     prev_w0_ = w0_;
+    SparseVector tmp_x;
     double numerator_w0 = 0;
     int l = 0;
     for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-        for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
             if (sparse_missing_data_(i, j) != 0) {
                 numerator_w0 += (e_[l] - w0_);
                 l++;
@@ -105,80 +108,98 @@ void FMWithALS::calculate_factors() {
     w0_ = w0a;
 
     // 1-way interactions
-    double wa[w_.size()] = {};
+    double wa[sum_users_items] = {};
     for (int a = 0; a < 2; ++a) {
-        double numerator_w[w_.size()] = {};
-        double denominator_w[w_.size()] = {};
+        double numerator_w[sum_users_items] = {};
+        double denominator_w[sum_users_items] = {};
         l = 0;
         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+            for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                 if (sparse_missing_data_(i, j) != 0) {
-                    numerator_w[x_(i, j)(a, "index")] += (e_[l] - w_[x_(i, j)(a, "index")] * x_(i, j)(a)) * x_(i, j)(a);
-                    denominator_w[x_(i, j)(a, "index")] += x_(i, j)(a) * x_(i, j)(a);
+                    tmp_x = x_(i, j);
+                    double tmp_x_value = tmp_x(a);
+                    int tmp_x_dense_index = tmp_x.dense_index(a);
+                    numerator_w[tmp_x_dense_index] += (e_[l] - w_[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
+                    denominator_w[tmp_x_dense_index] += tmp_x_value * tmp_x_value;
                     l++;
                 }
             }
         }
-        for (int i = 0; i < w_.size(); ++i) {
+        for (int i = 0; i < sum_users_items; ++i) {
             if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
         }
         l = 0;
         for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+            for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                 if (sparse_missing_data_(i, j) != 0) {
-                    e_[l] += (wa[x_(i, j)(a, "index")] - w_[x_(i, j)(a, "index")]) * x_(i, j)(a);
+                    tmp_x = x_(i, j);
+                    double tmp_x_value = tmp_x(a);
+                    int tmp_x_dense_index = tmp_x.dense_index(a);
+                    e_[l] += (wa[tmp_x_dense_index] - w_[tmp_x_dense_index]) * tmp_x_value;
                     l++;
                 }
             }
         }
     }
-    for (int a = 0; a < w_.size(); ++a) {
+    for (int a = 0; a < sum_users_items; ++a) {
         w_[a] = wa[a];
     }
 
     // 2-way interactions
     for (int f = 0; f < latent_dimension_; ++f) {
-        double va[v_.rows()] = {};
+        double* tmp_v=v_[f].get_values();
+        double* tmp_q=q_[f].get_values();
+        double va[sum_users_items] = {};
         for (int a = 0; a < 2; ++a) {
             double h_value[e_.size()] = {};
             l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                     if (sparse_missing_data_(i, j) != 0) {
-                        h_value[l] = -x_(i, j)(a) * (x_(i, j)(a) * v_(x_(i, j)(a, "index"), f) - q_(l, f));
+                        tmp_x = x_(i, j);
+                        double tmp_x_value = tmp_x(a);
+                        int tmp_x_dense_index = tmp_x.dense_index(a);
+                        h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
                         l++;
                     }
                 }
             }
 
-            double numerator_v[v_.rows()] = {};
-            double denominator_v[v_.rows()] = {};
+            double numerator_v[sum_users_items] = {};
+            double denominator_v[sum_users_items] = {};
             l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                     if (sparse_missing_data_(i, j) != 0) {
-                        numerator_v[x_(i, j)(a, "index")] += (e_[l] - v_(x_(i, j)(a, "index"), f) * h_value[l]) * h_value[l];
-                        denominator_v[x_(i, j)(a, "index")] += h_value[l] * h_value[l];
+                        tmp_x = x_(i, j);
+                        double tmp_x_value = tmp_x(a);
+                        int tmp_x_dense_index = tmp_x.dense_index(a);
+                        double tmp_h=h_value[l];
+                        numerator_v[tmp_x_dense_index] += (e_[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
+                        denominator_v[tmp_x_dense_index] += tmp_h * tmp_h;
                         l++;
                     }
                 }
             }
-            for (int a = 0; a < v_.rows(); ++a) {
+            for (int a = 0; a < sum_users_items; ++a) {
                 if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
             }
             l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                     if (sparse_missing_data_(i, j) != 0) {
-                        e_[l] += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * h_value[l];
-                        q_(l, f) += (va[x_(i, j)(a, "index")] - v_(x_(i, j)(a, "index"), f)) * x_(i, j)(a);
+                        tmp_x = x_(i, j);
+                        double tmp_x_value = tmp_x(a);
+                        int tmp_x_dense_index = tmp_x.dense_index(a);
+                        e_[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
+                        q_(f, l) += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
                         l++;
                     }
                 }
             }
         }
-        for (int a = 0; a < v_.rows(); ++a) {
-            v_(a, f) = va[a];
+        for (int a = 0; a < sum_users_items; ++a) {
+            v_(f, a) = va[a];
         }
     }
 }
@@ -186,7 +207,7 @@ void FMWithALS::calculate_factors() {
 double FMWithALS::calculate_objective_value() {
     double result = 0.0;
     for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-        for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
+        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
             if (sparse_missing_data_(i, j) != 0) {
                 double tmp = 0.0;
                 tmp = (sparse_missing_data_(i, j) - predict_y(x_(i, j), w0_, w_, v_));
@@ -225,7 +246,7 @@ bool FMWithALS::calculate_convergence_criterion() {
 void FMWithALS::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
-        prediction_[index] += predict_y(x_(missing_data_indices_(index, 0), missing_data_indices_(index, 1)), w0_, w_, v_);
+        prediction_[index] += predict_y(x_(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]), w0_, w_, v_);
         // std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:"
         //           << sparse_correct_data_(missing_data_indices_(index,0),

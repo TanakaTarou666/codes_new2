@@ -84,7 +84,7 @@ void Recom::revise_missing_values(void) {
             // 欠損した行番号を保存
             missing_data_indices_(m, 0) = tmprow;
             // 欠損した列番号を保存
-            missing_data_indices_(m, 1) = sparse_missing_data_(tmprow, tmpcol, "index");
+            missing_data_indices_(m, 1) = sparse_missing_data_.dense_index(tmprow, tmpcol);
             // スパースデータの列番号を保存
             sparse_missing_data_cols_[m] = tmpcol;
             m++;

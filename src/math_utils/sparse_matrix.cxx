@@ -69,7 +69,12 @@ SparseMatrix::~SparseMatrix() {
 }
 
 double& SparseMatrix::operator()(int row, int index) { return values_[row_pointers_[row] + index]; }
+
 double SparseMatrix::operator()(int row, int index) const { return values_[row_pointers_[row] + index]; }
+
+double& SparseMatrix::value(int row, int index) { return values_[row_pointers_[row] + index]; }
+
+int& SparseMatrix::dense_index(int row, int index) { return col_indices_[row_pointers_[row] + index]; }
 
 //(i,j,"index") : スパースでi行目，j番目の要素の、スパースではない本来の列番号
 int& SparseMatrix::operator()(int row, int index, const char* s) {
@@ -93,6 +98,11 @@ int SparseMatrix::operator()(int row, const char* s) const {
 int SparseMatrix::rows() const { return rows_; }
 int SparseMatrix::cols() const { return cols_; }
 int SparseMatrix::nnz() const { return nnz_; }  // total要素数
+
+int SparseMatrix::nnz(int row) {
+    int result = row_pointers_[row + 1] - row_pointers_[row];
+    return result;
+}
 
 SparseMatrix& SparseMatrix::operator=(const SparseMatrix& arg) {
     if (this == &arg) {
@@ -172,11 +182,11 @@ Matrix SparseMatrix::operator*(Matrix& arg) {
 
     for (int i = 0; i < rows_; i++) {
         for (int j = 0; j < arg.cols(); j++) {
-            result(i,j) = 0.0;
+            result(i, j) = 0.0;
         }
-        for (int k = 0; k < (*this)(i,"row"); k++) {
+        for (int k = 0; k < (*this)(i, "row"); k++) {
             for (int j = 0; j < arg.cols(); j++) {
-                result(i,j) += (*this)(i,k) * arg[(*this)(i,k,"index")][j];
+                result(i, j) += (*this)(i, k) * arg[(*this)(i, k, "index")][j];
             }
         }
     }

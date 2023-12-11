@@ -28,7 +28,7 @@ void FMWithSGD::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = 0.0;
     w_ = Vector(rs::num_users + rs::num_items, 0.0, "all");
-    v_ = Matrix(rs::num_users + rs::num_items, latent_dimension_);
+    v_ = Matrix(latent_dimension_,rs::num_users + rs::num_items);
     x_ = DSSTensor(sparse_missing_data_, rs::num_users + rs::num_items);
 
     std::mt19937_64 mt;
@@ -37,7 +37,7 @@ void FMWithSGD::set_initial_values(int seed) {
             mt.seed(seed);
             // ランダムに値生成
             std::uniform_real_distribution<> rand_v(-0.01, 0.01);
-            v_(n, k) = rand_v(mt);
+            v_(k,n) = rand_v(mt);
             // v_(n, k) = 0.01 * k + 0.01 * n;
             seed++;
         }
@@ -47,9 +47,9 @@ void FMWithSGD::set_initial_values(int seed) {
         for (int j = 0; j < x_(i, "row"); j++) {
             SparseVector x_element(rs::num_items, 2);
             x_element(0) = 1;
-            x_element(0, "index") = i;
+            x_element.dense_index(0) = i;
             x_element(1) = 1;
-            x_element(1, "index") = rs::num_users + x_(i, j, "index");
+            x_element.dense_index(1) = rs::num_users + x_.dense_index(i, j);
             x_(i, j) = x_element;
         }
     }
@@ -78,14 +78,14 @@ void FMWithSGD::calculate_factors() {
                 double prediction = w0_;
                 double linearTerm = 0.0;
                 for (int a = 0; a < 2; a++) {
-                    linearTerm += w_[tmp_x(a, "index")] * x_(i, j)(a);
+                    linearTerm += w_[tmp_x.dense_index(a)] * x_(i, j)(a);
                 }
                 // 交互作用項の計算
                 double sum[latent_dimension_] = {};
                 double squareSum[latent_dimension_] = {};
                 for (int factor = 0; factor < latent_dimension_; factor++) {
                     for (int a = 0; a < 2; a++) {
-                        double tmp = v_(tmp_x(a, "index"), factor) * tmp_x(a);
+                        double tmp = v_(factor,tmp_x.dense_index(a)) * tmp_x(a);
                         sum[factor] += tmp;
                         squareSum[factor] += tmp * tmp;
                     }
@@ -100,15 +100,15 @@ void FMWithSGD::calculate_factors() {
                 w0_ += learning_rate_ * (2 * err - reg_parameter_ * w0_);
                 // wの更新
                 for (int a = 0; a < 2; a++) {
-                    w_[tmp_x(a, "index")] += learning_rate_ * (2 * tmp_x(a) * err - reg_parameter_ * w_[tmp_x(a, "index")]);
+                    w_[tmp_x.dense_index(a)] += learning_rate_ * (2 * tmp_x(a) * err - reg_parameter_ * w_[tmp_x.dense_index(a)]);
                 }
                 // vの更新
                 for (int a = 0; a < 2; a++) {
                     double tmp_x_value = tmp_x(a);
-                    double tmp_x_index = tmp_x(a, "index");
+                    double tmp_x_index = tmp_x.dense_index(a);
                     for (int factor = 0; factor < latent_dimension_; factor++) {
-                        v_(tmp_x_index, factor) += learning_rate_ * (2 * err * tmp_x_value * (sum[factor] - v_(tmp_x_index, factor) * tmp_x_value) -
-                                                                     reg_parameter_ * v_(tmp_x_index, factor));
+                        v_(factor,tmp_x_index) += learning_rate_ * (2 * err * tmp_x_value * (sum[factor] - v_(factor,tmp_x_index) * tmp_x_value) -
+                                                                     reg_parameter_ * v_(factor,tmp_x_index));
                     }
                 }
             }

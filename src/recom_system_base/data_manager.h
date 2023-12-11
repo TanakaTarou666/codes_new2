@@ -1,7 +1,7 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
-//#define TEST
+//#define ARTIFICIALITY
+#define TEST
 //#define MOVIE
 //#define BOOK
 
@@ -26,7 +26,7 @@ const int steps = 2000;
 
 #if defined TEST
 const std::string data_name = "artificiality";
-const double latent_dimensions[] = {2.0};
+const double latent_dimensions[] = {5.0};
 const double reg_parameters[] = {0.01};
 const double learning_rates[] = {0.001};
 const int cluster_size[] = {2};
