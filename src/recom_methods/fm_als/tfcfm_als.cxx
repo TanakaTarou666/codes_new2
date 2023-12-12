@@ -106,7 +106,7 @@ void TFCFMWithALS::precompute() {
     Matrix tmp_v;
     for (int c = 0; c < cluster_size_; ++c) {
         for (int f = 0; f < latent_dimension_; ++f) {
-            tmp_v=v_[c];
+            tmp_v = v_[c];
             double* tmp_q = q_[c][f].get_values();
             int l = 0;
             for (int i = 0; i < sparse_missing_data_.rows(); i++) {
@@ -116,7 +116,7 @@ void TFCFMWithALS::precompute() {
                         if (f == 0) e_(c, l) = predict_y(tmp_x, w0_[c], w_[c], tmp_v) - sparse_missing_data_(i, j);
                         tmp_q[l] = 0.0;
                         for (int a = 0; a < 2; ++a) {
-                            tmp_q[l] += tmp_x(a) * tmp_v(f,tmp_x.dense_index(a));
+                            tmp_q[l] += tmp_x(a) * tmp_v(f, tmp_x.dense_index(a));
                         }
                         l++;
                     }
@@ -135,18 +135,41 @@ void TFCFMWithALS::calculate_factors() {
     double tmp_x_value;
     int tmp_x_dense_index;
 
+    int sparse_missing_data_rows = sparse_missing_data_.rows();
+    int sparse_missing_data_nnz[sparse_missing_data_rows] = {};
+
+    int sum_data_elements = 0;
+    for (int i = 0; i < sparse_missing_data_rows; i++) {
+        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
+            if (sparse_missing_data_(i, j) != 0.0) {
+                sparse_missing_data_nnz[i]++;
+                sum_data_elements++;
+            }
+        }
+    }
+    int sparse_missing_data_cols[sum_data_elements] = {};
+    int* tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
+    for (int i = 0; i < sparse_missing_data_rows; i++) {
+        int k = 0;
+        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
+            if (sparse_missing_data_(i, j) != 0) {
+                *(tmp_sparse_missing_data_cols + k) = j;
+                k++;
+            }
+        }
+        tmp_sparse_missing_data_cols += sparse_missing_data_nnz[i];
+    }
+
     for (int c = 0; c < cluster_size_; ++c) {
         double numerator_w0 = 0;
         double denominator_w0 = 0;
         int l = 0;
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+        for (int i = 0; i < sparse_missing_data_rows; i++) {
             double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-            for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                if (sparse_missing_data_(i, j) != 0) {
-                    numerator_w0 += tmp_membership * (e_(c, l) - w0_[c]);
-                    denominator_w0 += tmp_membership;
-                    l++;
-                }
+            for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+                numerator_w0 += tmp_membership * (e_(c, l) - w0_[c]);
+                denominator_w0 += tmp_membership;
+                l++;
             }
         }
         double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_);
@@ -164,37 +187,39 @@ void TFCFMWithALS::calculate_factors() {
             double numerator_w[sum_users_items] = {};
             double denominator_w[sum_users_items] = {};
             int l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+
+            tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
+            for (int i = 0; i < sparse_missing_data_rows; i++) {
                 double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        tmp_x = x_(i, j);
-                        tmp_x_value = tmp_x(a);
-                        tmp_x_dense_index = tmp_x.dense_index(a);
-                        numerator_w[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
-                        denominator_w[tmp_x_dense_index] += tmp_membership * tmp_x_value * tmp_x_value;
-                        l++;
-                    }
+                for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+                    tmp_x = x_(i, tmp_sparse_missing_data_cols[j]);
+                    tmp_x_value = tmp_x(a);
+                    tmp_x_dense_index = tmp_x.dense_index(a);
+                    numerator_w[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
+                    denominator_w[tmp_x_dense_index] += tmp_membership * tmp_x_value * tmp_x_value;
+                    l++;
                 }
+                tmp_sparse_missing_data_cols += sparse_missing_data_nnz[i];
             }
             for (int i = 0; i < sum_users_items; ++i) {
-                if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
+                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
             }
             l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        tmp_x = x_(i, j);
-                        tmp_x_value = tmp_x(a);
-                        tmp_x_dense_index = tmp_x.dense_index(a);
-                        e_(c, l) += (wa[tmp_x_dense_index] - tmp_w[tmp_x_dense_index]) * tmp_x_value;
-                        l++;
-                    }
+            tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
+            for (int i = 0; i < sparse_missing_data_rows; i++) {
+                double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+                for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+                    tmp_x = x_(i, tmp_sparse_missing_data_cols[j]);
+                    tmp_x_value = tmp_x(a);
+                    tmp_x_dense_index = tmp_x.dense_index(a);
+                    e_(c, l) += (wa[tmp_x_dense_index] - tmp_w[tmp_x_dense_index]) * tmp_x_value;
+                    l++;
                 }
+                tmp_sparse_missing_data_cols += sparse_missing_data_nnz[i];
             }
         }
-        for (int a = 0; a < sum_users_items; ++a) {
-            w_(c, a) = wa[a];
+        for (int j_ = 0; j_ < sum_users_items; ++j_) {
+            w_(c, j_) = wa[j_];
         }
     }
     // 2-way interactions
@@ -207,60 +232,49 @@ void TFCFMWithALS::calculate_factors() {
             for (int a = 0; a < 2; ++a) {
                 double h_value[e_.cols()] = {};
                 int l = 0;
-                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                    for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                        if (sparse_missing_data_(i, j) != 0) {
-                            tmp_x = x_(i, j);
-                            tmp_x_value = tmp_x(a);
-                            tmp_x_dense_index = tmp_x.dense_index(a);
-                            h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
-                            l++;
-                        }
-                    }
-                }
-
                 double numerator_v[sum_users_items] = {};
                 double denominator_v[sum_users_items] = {};
-                l = 0;
-                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+                tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
+                for (int i = 0; i < sparse_missing_data_rows; i++) {
                     double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-                    for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                        if (sparse_missing_data_(i, j) != 0) {
-                            tmp_x = x_(i, j);
-                            tmp_x_value = tmp_x(a);
-                            tmp_x_dense_index = tmp_x.dense_index(a);
-                            double tmp_h = h_value[l];
-                            numerator_v[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
-                            denominator_v[tmp_x_dense_index] += tmp_membership * tmp_h * tmp_h;
-                            l++;
-                        }
+                    for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+                        tmp_x = x_(i, tmp_sparse_missing_data_cols[j]);
+                        tmp_x_value = tmp_x(a);
+                        tmp_x_dense_index = tmp_x.dense_index(a);
+                        h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
+                        double tmp_h = h_value[l];
+                        numerator_v[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
+                        denominator_v[tmp_x_dense_index] += tmp_membership * tmp_h * tmp_h;
+                        l++;
                     }
+                    tmp_sparse_missing_data_cols += sparse_missing_data_nnz[i];
                 }
-                for (int a = 0; a < sum_users_items; ++a) {
-                    if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
+                for (int j_ = 0; j_ < sum_users_items; ++j_) {
+                    if (denominator_v[j_] != 0) va[j_] = -numerator_v[j_] / (denominator_v[j_] + reg_parameter_);
                 }
                 l = 0;
-                for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                    for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                        if (sparse_missing_data_(i, j) != 0) {
-                            tmp_x = x_(i, j);
-                            tmp_x_value = tmp_x(a);
-                            tmp_x_dense_index = tmp_x.dense_index(a);
-                            tmp_e[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
-                            tmp_q[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
-                            l++;
-                        }
+                tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
+                for (int i = 0; i < sparse_missing_data_rows; i++) {
+                    double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+                    for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+                        tmp_x = x_(i, tmp_sparse_missing_data_cols[j]);
+                        tmp_x_value = tmp_x(a);
+                        tmp_x_dense_index = tmp_x.dense_index(a);
+                        tmp_e[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
+                        tmp_q[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
+                        l++;
                     }
+                    tmp_sparse_missing_data_cols += sparse_missing_data_nnz[i];
                 }
             }
-            for (int a = 0; a < sum_users_items; ++a) {
-                tmp_v[a] = va[a];
+            for (int j_ = 0; j_ < sum_users_items; ++j_) {
+                tmp_v[j_] = va[j_];
             }
         }
     }
 
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+        for (int i = 0; i < sparse_missing_data_rows; i++) {
             dissimilarities_(c, i) = 0.0;
             for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
                 if (sparse_missing_data_(i, j) != 0) {
@@ -282,7 +296,7 @@ double TFCFMWithALS::calculate_objective_value() {
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
         }
     }
-    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_));
+    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_)) / 2;
     return result;
 }
 
