@@ -95,6 +95,7 @@ Matrix& Matrix::operator-=(const Matrix& rhs) {
     }
     return *this;
 }
+
 std::ostream& Matrix::print(std::ostream& lhs) const {
     lhs << "(";
     int i;

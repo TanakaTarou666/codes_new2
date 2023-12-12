@@ -105,21 +105,20 @@ void TFCFMWithALS::precompute() {
     SparseVector tmp_x;
     Matrix tmp_v;
     for (int c = 0; c < cluster_size_; ++c) {
-        for (int f = 0; f < latent_dimension_; ++f) {
-            tmp_v=v_[c];
-            double* tmp_q = q_[c][f].get_values();
-            int l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        tmp_x = x_(i, j);
-                        if (f == 0) e_(c, l) = predict_y(tmp_x, w0_[c], w_[c], tmp_v) - sparse_missing_data_(i, j);
-                        tmp_q[l] = 0.0;
-                        for (int a = 0; a < 2; ++a) {
-                            tmp_q[l] += tmp_x(a) * tmp_v(f,tmp_x.dense_index(a));
+        tmp_v = v_[c];
+        int l = 0;
+        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+            for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
+                if (sparse_missing_data_(i, j) != 0) {
+                    tmp_x = x_(i, j);
+                    e_(c, l) = predict_y(tmp_x, w0_[c], w_[c], tmp_v) - sparse_missing_data_(i, j);
+                    for (int f = 0; f < latent_dimension_; ++f) {
+                        q_[c](f, l) = 0.0;
+                        for (int j_ = 0; j_ < tmp_x.nnz(); ++j_) {
+                            q_[c](f, l) += tmp_x(j_) * tmp_v(f, tmp_x.dense_index(j_));
                         }
-                        l++;
                     }
+                    l++;
                 }
             }
         }
@@ -135,6 +134,7 @@ void TFCFMWithALS::calculate_factors() {
     double tmp_x_value;
     int tmp_x_dense_index;
 
+    double sum_e = 0;
     for (int c = 0; c < cluster_size_; ++c) {
         double numerator_w0 = 0;
         double denominator_w0 = 0;
@@ -197,6 +197,17 @@ void TFCFMWithALS::calculate_factors() {
             w_(c, a) = wa[a];
         }
     }
+    // データ表示
+    // for (int i = 0; i < rs::num_users; i++) {
+    //     for (int j = 0; j < x_.nnz(i); j++) {
+    //         for (int a = 0; a < 2; ++a) {
+    //             // std::cout << "i:" << i << " j:" << j << " : " << x_(i, j) << " " << x_(i,j).dense_index(a);
+    //             //<< std::endl;
+    //             std::cout << " " << x_(i, j).dense_index(a);
+    //         }
+    //     }
+    // }
+
     // 2-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_e = e_[c].get_values();
@@ -213,8 +224,11 @@ void TFCFMWithALS::calculate_factors() {
                             tmp_x = x_(i, j);
                             tmp_x_value = tmp_x(a);
                             tmp_x_dense_index = tmp_x.dense_index(a);
+                            // std::cout << 100000*l+100*i+j <<" " << tmp_x_dense_index << " " << a << std::endl;
+                            // std::cout << 100*c+f  << std::endl;
                             h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
                             l++;
+                            // std::cout << "zafasfasfas" << std::endl;
                         }
                     }
                 }
@@ -246,15 +260,15 @@ void TFCFMWithALS::calculate_factors() {
                             tmp_x = x_(i, j);
                             tmp_x_value = tmp_x(a);
                             tmp_x_dense_index = tmp_x.dense_index(a);
-                            tmp_e[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
-                            tmp_q[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
+                            e_(c, l) += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
+                            q_[c](f, l) += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
                             l++;
                         }
                     }
                 }
             }
             for (int a = 0; a < sum_users_items; ++a) {
-                tmp_v[a] = va[a];
+                v_[c](f, a) = va[a];
             }
         }
     }

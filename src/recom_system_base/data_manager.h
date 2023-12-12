@@ -57,7 +57,7 @@ const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
 const double max_value = 4.0;
-const int start_missing_valu = 7000;
+const int start_missing_valu = 5000;
 const int end_missing_valu = 7000;
 const int step_missing_valu = 500;
 #elif defined BOOK
