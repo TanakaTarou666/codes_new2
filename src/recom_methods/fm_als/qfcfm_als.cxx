@@ -151,7 +151,7 @@ void QFCFMWithALS::calculate_factors() {
                 l++;
             }
         }
-        double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_);
+        double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_/2);
         for (l = 0; l < missing_num_samples_; l++) e_(c, l) += (w0a - w0_[c]);
         w0_[c] = w0a;
     }
@@ -181,7 +181,7 @@ void QFCFMWithALS::calculate_factors() {
                 }
             }
             for (int i = 0; i < sum_users_items; ++i) {
-                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
+                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_/2);
             }
             l = 0;
             for (int i = 0; i < rs::num_users; i++) {
@@ -227,7 +227,7 @@ void QFCFMWithALS::calculate_factors() {
                     }
                 }
                 for (int i = 0; i < sum_users_items; ++i) {
-                    if (denominator_v[i] != 0) va[i] = -numerator_v[i] / (denominator_v[i] + reg_parameter_);
+                    if (denominator_v[i] != 0) va[i] = -numerator_v[i] / (denominator_v[i] + reg_parameter_/2);
                 }
                 l = 0;
                 for (int i = 0; i < rs::num_users; i++) {

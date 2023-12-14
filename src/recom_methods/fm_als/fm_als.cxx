@@ -94,7 +94,7 @@ void FMWithALS::calculate_factors() {
             l++;
         }
     }
-    double w0a = -numerator_w0 / (l + reg_parameter_);
+    double w0a = -numerator_w0 / (l + reg_parameter_/2);
     for (l = 0; l < e_.size(); l++) e_[l] += (w0a - w0_);
     w0_ = w0a;
 
@@ -115,7 +115,7 @@ void FMWithALS::calculate_factors() {
             }
         }
         for (int i = 0; i < sum_users_items; ++i) {
-            if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
+            if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_/2);
         }
         l = 0;
         for (int i = 0; i < rs::num_users; i++) {
@@ -165,7 +165,7 @@ void FMWithALS::calculate_factors() {
                 }
             }
             for (int a = 0; a < sum_users_items; ++a) {
-                if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_);
+                if (denominator_v[a] != 0 && std::isfinite(denominator_v[a])) va[a] = -numerator_v[a] / (denominator_v[a] + reg_parameter_/2);
             }
             l = 0;
             for (int i = 0; i < rs::num_users; i++) {
