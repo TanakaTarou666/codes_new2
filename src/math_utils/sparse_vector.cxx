@@ -85,6 +85,10 @@ SparseVector &SparseVector::operator=(SparseVector &&arg) {
     return *this;
 }
 
+double& SparseVector::value(int index) { return values_[index]; }
+
+int& SparseVector::dense_index(int index) { return indices_[index]; }
+
 int SparseVector::size(void) const { return size_; }
 
 int SparseVector::nnz(void) const { return nnz_; }

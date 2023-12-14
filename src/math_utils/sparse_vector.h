@@ -41,6 +41,8 @@ class SparseVector {
     //スパースでi行目，j番目の要素の、スパースではない本来の列番号
     int &operator()(int index, const char *s);
     int operator()(int index, const char *s) const;
+    double& value(int index);
+    int& dense_index(int index);
     SparseVector operator+(void) const;
     SparseVector operator-(void) const;
     bool operator==(const SparseVector &rhs) const;

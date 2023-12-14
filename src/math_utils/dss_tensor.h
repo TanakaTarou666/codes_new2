@@ -24,12 +24,14 @@ class DSSTensor {
     int& operator()(int row, int index, const char* s);
     int operator()(int row, int index, const char* s) const;
     int operator()(int row, const char* s) const;
+    int& dense_index(int row,int index);
     DSSTensor& operator=(const DSSTensor& arg);  // コピー代入演算子
     DSSTensor& operator=(DSSTensor&& arg); 
     int rows() const;
     int cols() const;
     int depth() const;
     int nnz() const;
+    int nnz(int row) const;
     SparseVector* get_elements();  // データへのポインタを取得するメソッド
     int* get_row_pointers();  // データへのポインタを取得するメソッド
     int* get_col_indices();  // データへのポインタを取得するメソッド

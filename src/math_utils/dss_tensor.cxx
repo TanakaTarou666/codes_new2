@@ -89,6 +89,8 @@ int DSSTensor::operator()(int row, const char* s) const {
     return result;
 }
 
+int& DSSTensor::dense_index(int row, int index) { return col_indices_[row_pointers_[row] + index]; }
+
 DSSTensor& DSSTensor::operator=(const DSSTensor& arg) {
     if (this == &arg) {
         return *this;  // 自己代入の場合、何もしない
@@ -161,6 +163,11 @@ int DSSTensor::cols(void) const { return cols_; }
 int DSSTensor::depth(void) const { return depth_; }
 
 int DSSTensor::nnz(void) const { return nnz_; }
+
+int DSSTensor::nnz(int row) const {
+    int result = row_pointers_[row + 1] - row_pointers_[row];
+    return result;
+}
 
 SparseVector* DSSTensor::get_elements() { return elements_; }
 

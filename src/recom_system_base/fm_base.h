@@ -5,6 +5,7 @@
 
 class FMBase : virtual public Recom {
    protected:
+    int sum_users_items= rs::num_users+rs::num_items;
     
    public:
     FMBase(int missing_count);

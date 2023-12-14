@@ -31,12 +31,16 @@ class Recom {
     std::vector<std::string> dirs_;
     std::vector<double> parameters_;
     std::string method_name_;
-    // 欠損後データ
-    SparseMatrix sparse_missing_data_;
     // 欠損前データ
     SparseMatrix sparse_correct_data_;
+    int *sparse_missing_data_row_pointers_, *sparse_correct_data_col_indices_;
+    // 欠損後データ
+    SparseMatrix sparse_missing_data_;
     double *sparse_missing_data_values_;
-    int *sparse_missing_data_row_pointers_, *sparse_missing_data_col_indices_;
+    int sparse_missing_data_rows_ = rs::num_users;
+    int sparse_missing_data_nnz_[rs::num_users];
+    Vector sparse_missing_data_cols_;
+    int *sparse_missing_data_col_indices_;
     // エラーの検知
     bool error_detected_;
     // 欠損させた箇所，類似度

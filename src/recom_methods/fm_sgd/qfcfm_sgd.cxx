@@ -44,7 +44,7 @@ void QFCFMWithSGD::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = Vector(cluster_size_, 0.0, "all");
     w_ = Matrix(cluster_size_, rs::num_users + rs::num_items, 0.0);
-    v_ = Tensor(cluster_size_, rs::num_users + rs::num_items, latent_dimension_);
+    v_ = Tensor(cluster_size_, latent_dimension_,rs::num_users + rs::num_items);
     x_ = DSSTensor(sparse_missing_data_, rs::num_users + rs::num_items);
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
@@ -67,9 +67,9 @@ void QFCFMWithSGD::set_initial_values(int seed) {
         for (int j = 0; j < x_(i, "row"); j++) {
             SparseVector x_element(rs::num_items, 2);
             x_element(0) = 1;
-            x_element(0, "index") = i;
+            x_element.dense_index(0) = i;
             x_element(1) = 1;
-            x_element(1, "index") = rs::num_users + x_(i, j, "index");
+            x_element.dense_index(1) = rs::num_users + x_.dense_index(i, j);
             x_(i, j) = x_element;
         }
     }
@@ -126,14 +126,14 @@ void QFCFMWithSGD::calculate_factors() {
                     double prediction = w0_[c];
                     double linearTerm = 0.0;
                     for (int a = 0; a < 2; a++) {
-                        linearTerm += w_(c, tmp_x(a, "index")) * x_(i, j)(a);
+                        linearTerm += w_(c, tmp_x.dense_index(a)) * x_(i, j)(a);
                     }
                     // 交互作用項の計算
                     double sum[latent_dimension_] = {};
                     double squareSum[latent_dimension_] = {};
                     for (int factor = 0; factor < latent_dimension_; factor++) {
                         for (int a = 0; a < 2; a++) {
-                            double tmp = tmp_v(tmp_x(a, "index"), factor) * tmp_x(a);
+                            double tmp = tmp_v(factor,tmp_x.dense_index(a)) * tmp_x(a);
                             sum[factor] += tmp;
                             squareSum[factor] += tmp * tmp;
                         }
@@ -148,18 +148,18 @@ void QFCFMWithSGD::calculate_factors() {
                     w0_[c] += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err - reg_parameter_ * w0_[c]);
                     // wの更新
                     for (int a = 0; a < 2; a++) {
-                        w_(c, tmp_x(a, "index")) += learning_rate_ * (2 * tmp_x(a) * tmp_membership_times_cluster_size_adjustments * err -
-                                                                      reg_parameter_ * w_(c, tmp_x(a, "index")));
+                        w_(c, tmp_x.dense_index(a)) += learning_rate_ * (2 * tmp_x(a) * tmp_membership_times_cluster_size_adjustments * err -
+                                                                      reg_parameter_ * w_(c, tmp_x.dense_index(a)));
                     }
 
                     // vの更新
                     for (int a = 0; a < 2; a++) {
                         double tmp_x_value = tmp_x(a);
-                        double tmp_x_index = tmp_x(a, "index");
+                        double tmp_x_index = tmp_x.dense_index(a);
                         for (int factor = 0; factor < latent_dimension_; factor++) {
-                            tmp_v(tmp_x_index, factor) += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err * tmp_x_value *
-                                                                                (sum[factor] - tmp_v(tmp_x_index, factor) * tmp_x_value) -
-                                                                            reg_parameter_ * tmp_v(tmp_x_index, factor));
+                            tmp_v(factor,tmp_x_index) += learning_rate_ * (2 * tmp_membership_times_cluster_size_adjustments * err * tmp_x_value *
+                                                                                (sum[factor] - tmp_v(factor,tmp_x_index) * tmp_x_value) -
+                                                                            reg_parameter_ * tmp_v(factor,tmp_x_index));
                         }
                     }
                 }
