@@ -21,10 +21,7 @@ class Recom {
    private:
     // 欠損のさせ方を決めるシード値
     int seed_ = 0;
-    // 予測値評価
-    Vector mae_, auc_;
-    Vector tp_fn_, fp_tn_;
-
+    
    protected:
     // 欠損数
     int num_missing_value_;
@@ -33,14 +30,15 @@ class Recom {
     std::string method_name_;
     // 欠損前データ
     SparseMatrix sparse_correct_data_;
-    int *sparse_missing_data_row_pointers_, *sparse_correct_data_col_indices_;
+    
     // 欠損後データ
     SparseMatrix sparse_missing_data_;
     double *sparse_missing_data_values_;
-    int sparse_missing_data_rows_ = rs::num_users;
-    int sparse_missing_data_nnz_[rs::num_users];
-    Vector sparse_missing_data_cols_;
+    int *sparse_missing_data_row_pointers_;
+    int sparse_missing_data_row_nnzs_[rs::num_users];
     int *sparse_missing_data_col_indices_;
+    int missing_num_samples_;
+    
     // エラーの検知
     bool error_detected_;
     // 欠損させた箇所，類似度
@@ -50,6 +48,10 @@ class Recom {
     // 予測評
     Vector prediction_;
     double prev_objective_value_, objective_value_;
+    // 予測値評価
+    Vector mae_, auc_;
+    Vector tp_fn_, fp_tn_;
+
 
    public:
     // ユーザ数，アイテム数，欠損数，欠損パターン

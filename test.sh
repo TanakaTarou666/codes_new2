@@ -1,4 +1,4 @@
-files=("tfcfm_als") #
+files=("qfcfm_als") #
 #files=("fm_sgd") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行

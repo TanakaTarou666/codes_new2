@@ -1,18 +1,7 @@
 #include "tfcfm_als.h"
 
 TFCFMWithALS::TFCFMWithALS(int missing_count)
-    : FMBase(missing_count),
-      TFCRecom(missing_count),
-      Recom(missing_count),
-      w0_(),
-      prev_w0_(),
-      w_(),
-      prev_w_(),
-      v_(),
-      prev_v_(),
-      e_(),
-      q_(),
-      x_() {
+    : FMBase(missing_count), TFCRecom(missing_count), Recom(missing_count), w0_(), prev_w0_(), w_(), prev_w_(), v_(), prev_v_(), e_(), q_(), x_() {
     method_name_ = append_current_time_if_test("TFCFM_ALS");
 }
 
@@ -44,8 +33,8 @@ void TFCFMWithALS::set_initial_values(int seed) {
     w0_ = Vector(cluster_size_, 0.0, "all");
     w_ = Matrix(cluster_size_, sum_users_items, 0.0);
     v_ = Tensor(cluster_size_, latent_dimension_, sum_users_items);
-    e_ = Matrix(cluster_size_, sparse_missing_data_.nnz() - num_missing_value_, 0.0);
-    q_ = Tensor(cluster_size_, latent_dimension_, sparse_missing_data_.nnz() - num_missing_value_);
+    e_ = Matrix(cluster_size_, missing_num_samples_, 0.0);
+    q_ = Tensor(cluster_size_, latent_dimension_, missing_num_samples_);
     x_ = DSSTensor(sparse_missing_data_, sum_users_items);
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
@@ -64,13 +53,8 @@ void TFCFMWithALS::set_initial_values(int seed) {
     }
 
     for (int i = 0; i < rs::num_users; i++) {
-        for (int j = 0; j < x_.nnz(i); j++) {
-            SparseVector x_element(rs::num_items, 2);
-            x_element(0) = 1;
-            x_element.dense_index(0) = i;
-            x_element(1) = 1;
-            x_element.dense_index(1) = rs::num_users + x_.dense_index(i, j);
-            x_(i, j) = x_element;
+        for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+            x_(i, j) = make_one_hot_data(i, x_.dense_index(i, j));
         }
     }
 
@@ -109,11 +93,8 @@ void TFCFMWithALS::set_initial_values(int seed) {
     //         }
     //     }
     // }
+
     precompute();
-    for (int i = 0; i < sparse_missing_data_rows_; i++) {
-        sparse_missing_data_nnz_[i] = 0;
-    }
-    pointer_sparse_missing_data_cols_ = sparse_missing_data_cols_.get_values();
 }
 
 void TFCFMWithALS::precompute() {
@@ -124,17 +105,15 @@ void TFCFMWithALS::precompute() {
             tmp_v = v_[c];
             double* tmp_q = q_[c][f].get_values();
             int l = 0;
-            for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-                for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-                    if (sparse_missing_data_(i, j) != 0) {
-                        tmp_x = x_(i, j);
-                        if (f == 0) e_(c, l) = predict_y(tmp_x, w0_[c], w_[c], tmp_v) - sparse_missing_data_(i, j);
-                        tmp_q[l] = 0.0;
-                        for (int a = 0; a < 2; ++a) {
-                            tmp_q[l] += tmp_x(a) * tmp_v(f, tmp_x.dense_index(a));
-                        }
-                        l++;
+            for (int i = 0; i < rs::num_users; i++) {
+                for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                    tmp_x = x_(i, j);
+                    if (f == 0) e_(c, l) = predict_y(tmp_x, w0_[c], w_[c], tmp_v) - sparse_missing_data_(i, j);
+                    tmp_q[l] = 0.0;
+                    for (int a = 0; a < 2; ++a) {
+                        tmp_q[l] += tmp_x(a) * tmp_v(f, tmp_x.dense_index(a));
                     }
+                    l++;
                 }
             }
         }
@@ -150,45 +129,20 @@ void TFCFMWithALS::calculate_factors() {
     double tmp_x_value;
     int tmp_x_dense_index;
 
-    // int sparse_missing_data_rows = rs::num_users;
-    // int sparse_missing_data_nnz[rs::num_users] = {};
-    // std::cout << sparse_missing_data_rows<<std::endl;
-
-    int sum_data_elements = 0;
-    for (int i = 0; i < sparse_missing_data_rows; i++) {
-        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-            if (sparse_missing_data_(i, j) != 0.0) {
-                sparse_missing_data_nnz[i]++;
-                sum_data_elements++;
-            }
-        }
-    }
-    int sparse_missing_data_cols[sum_data_elements] = {};
-    tmp_sparse_missing_data_cols = &sparse_missing_data_cols[0];
-    int k = 0;
-    for (int i = 0; i < sparse_missing_data_rows; i++) {
-        for (int j = 0; j < sparse_missing_data_.nnz(i); j++) {
-            if (sparse_missing_data_(i, j) != 0) {
-                *(tmp_sparse_missing_data_cols + k) = j;
-                k++;
-            }
-        }
-    }
-
     for (int c = 0; c < cluster_size_; ++c) {
         double numerator_w0 = 0;
         double denominator_w0 = 0;
         int l = 0;
-        for (int i = 0; i < sparse_missing_data_rows; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-            for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+            for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
                 numerator_w0 += tmp_membership * (e_(c, l) - w0_[c]);
                 denominator_w0 += tmp_membership;
                 l++;
             }
         }
         double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_);
-        for (l = 0; l < e_.cols(); l++) e_(c, l) += (w0a - w0_[c]);
+        for (l = 0; l < missing_num_samples_; l++) e_(c, l) += (w0a - w0_[c]);
         w0_[c] = w0a;
     }
 
@@ -202,10 +156,10 @@ void TFCFMWithALS::calculate_factors() {
             double numerator_w[sum_users_items] = {};
             double denominator_w[sum_users_items] = {};
             int l = 0;
-            for (int i = 0; i < sparse_missing_data_rows; i++) {
+            for (int i = 0; i < rs::num_users; i++) {
                 double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-                for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
-                    tmp_x = x_(i, tmp_sparse_missing_data_cols[l]);
+                for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                    tmp_x = x_(i, j);
                     tmp_x_value = tmp_x(a);
                     tmp_x_dense_index = tmp_x.dense_index(a);
                     numerator_w[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
@@ -217,10 +171,9 @@ void TFCFMWithALS::calculate_factors() {
                 if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_);
             }
             l = 0;
-            for (int i = 0; i < sparse_missing_data_rows; i++) {
-                double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-                for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
-                    tmp_x = x_(i, tmp_sparse_missing_data_cols[l]);
+            for (int i = 0; i < rs::num_users; i++) {
+                for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                    tmp_x = x_(i, j);
                     tmp_x_value = tmp_x(a);
                     tmp_x_dense_index = tmp_x.dense_index(a);
                     e_(c, l) += (wa[tmp_x_dense_index] - tmp_w[tmp_x_dense_index]) * tmp_x_value;
@@ -240,14 +193,14 @@ void TFCFMWithALS::calculate_factors() {
             double* tmp_q = q_[c][f].get_values();
             double va[sum_users_items] = {};
             for (int a = 0; a < 2; ++a) {
-                double h_value[e_.cols()] = {};
+                double h_value[missing_num_samples_] = {};
                 int l = 0;
                 double numerator_v[sum_users_items] = {};
                 double denominator_v[sum_users_items] = {};
-                for (int i = 0; i < sparse_missing_data_rows; i++) {
+                for (int i = 0; i < rs::num_users; i++) {
                     double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-                    for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
-                        tmp_x = x_(i, tmp_sparse_missing_data_cols[l]);
+                    for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                        tmp_x = x_(i, j);
                         tmp_x_value = tmp_x(a);
                         tmp_x_dense_index = tmp_x.dense_index(a);
                         h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
@@ -261,13 +214,14 @@ void TFCFMWithALS::calculate_factors() {
                     if (denominator_v[j_] != 0) va[j_] = -numerator_v[j_] / (denominator_v[j_] + reg_parameter_);
                 }
                 l = 0;
-                for (int i = 0; i < sparse_missing_data_rows; i++) {
-                    for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
-                        tmp_x = x_(i, tmp_sparse_missing_data_cols[l]);
+                for (int i = 0; i < rs::num_users; i++) {
+                    for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                        tmp_x = x_(i, j);
                         tmp_x_value = tmp_x(a);
                         tmp_x_dense_index = tmp_x.dense_index(a);
-                        tmp_e[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * h_value[l];
-                        tmp_q[l] += (va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index]) * tmp_x_value;
+                        double difference_v = va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index];
+                        tmp_e[l] += difference_v * h_value[l];
+                        tmp_q[l] += difference_v * tmp_x_value;
                         l++;
                     }
                 }
@@ -280,12 +234,11 @@ void TFCFMWithALS::calculate_factors() {
 
     for (int c = 0; c < cluster_size_; c++) {
         int l = 0;
-        for (int i = 0; i < sparse_missing_data_rows; i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             dissimilarities_(c, i) = 0.0;
-            for (int j = 0; j < sparse_missing_data_nnz[i]; j++) {
+            for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
                 double tmp = 0.0;
-                tmp = (sparse_missing_data_(i, tmp_sparse_missing_data_cols[l]) -
-                       predict_y(x_(i, tmp_sparse_missing_data_cols[l]), w0_[c], w_[c], v_[c]));
+                tmp = (sparse_missing_data_(i, j) - predict_y(x_(i, j), w0_[c], w_[c], v_[c]));
                 dissimilarities_(c, i) = tmp * tmp;
                 l++;
             }
@@ -316,7 +269,6 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
     // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
     // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << "\t";
     // std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
-    std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
@@ -335,9 +287,9 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
 void TFCFMWithALS::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
+        SparseVector tmp = make_one_hot_data(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]);
         for (int c = 0; c < cluster_size_; c++) {
-            prediction_[index] += membership_(c, missing_data_indices_(index, 0)) *
-                                  predict_y(x_(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]), w0_[c], w_[c], v_[c]);
+            prediction_[index] += membership_(c, missing_data_indices_(index, 0)) * predict_y(tmp, w0_[c], w_[c], v_[c]);
         }
         // std::cout << "Prediction:" << prediction_[index]
         //           << " SparseCorrectData:" << sparse_correct_data_(missing_data_indices_[index][0], missing_data_indices_[index][1]) << std::endl;
