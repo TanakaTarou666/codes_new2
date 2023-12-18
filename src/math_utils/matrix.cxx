@@ -173,7 +173,7 @@ Matrix operator*(Matrix& lhs, Matrix& rhs) {
     int numrows_B = rhs.rows();
     int numcols_B = rhs.cols();
 
-    Matrix result(lhs.rows(), rhs.cols());
+    Matrix result(numrows_A, numcols_B);
 
     int numrows_Result = numrows_A;
     int numcols_Result = numcols_B;
