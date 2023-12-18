@@ -30,6 +30,7 @@ class SparseMatrix {
     int cols() const;
     int nnz() const; //total要素数(Non-Zero)
     int nnz(int row);
+    SparseMatrix remove_zeros();
     SparseMatrix& operator=(const SparseMatrix& arg);  // コピー代入演算子
     SparseMatrix& operator=(SparseMatrix&& arg);       // ムーブ代入演算子
     Matrix operator*(Matrix& arg);

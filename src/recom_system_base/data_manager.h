@@ -1,7 +1,7 @@
 #include <iomanip>
 
-//#define ARTIFICIALITY
-#define TEST
+#define ARTIFICIALITY
+//#define TEST
 //#define MOVIE
 //#define BOOK
 
@@ -40,8 +40,8 @@ const int num_users = 80;
 const int num_items = 100;
 const int num_samples=8000;
 const double max_value = 4.0;
-const int start_missing_valu = 6500;
-const int end_missing_valu = 6500;
+const int start_missing_valu = 5000;
+const int end_missing_valu = 5000;
 const int step_missing_valu = 1000;
 #elif defined ARTIFICIALITY
 const std::string data_name = "artificiality";
@@ -57,16 +57,16 @@ const int num_initial_values = 4;
 const int steps = 2000;
 const int num_users = 80;
 const int num_items = 100;
-const int number_of_samples=8000;
+const int num_samples=8000;
 const double max_value = 4.0;
-const int start_missing_valu = 7000;
-const int end_missing_valu = 7000;
+const int start_missing_valu = 5000;
+const int end_missing_valu = 5000;
 const int step_missing_valu = 500;
 #elif defined BOOK
 const std::string data_name = "book";
 const int num_users = 1091;
 const int num_items = 2248;
-const int number_of_samples=35179;
+const int num_samples=35179;
 const double max_value = 10.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -75,7 +75,7 @@ const int step_missing_valu = 500;
 const std::string data_name = "movie";
 const int num_users = 905;
 const int num_items = 684;
-const int number_of_samples=277546;
+const int num_samples=277546;
 const double max_value = 5.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -92,7 +92,7 @@ const int step_missing_valu = 2000;
 const std::string data_name = "movie10m";
 const int num_users = 1299;
 const int num_items = 1695;
-const int number_of_samples=1022610;
+const int num_samples=1022610;
 const double max_value = 5.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -101,7 +101,7 @@ const int step_missing_valu = 2000;
 const std::string data_name = "libimseti";
 const int num_users = 866;
 const int num_items = 1156;
-const int number_of_samples=400955;
+const int num_samples=400955;
 const double max_value = 10.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -110,7 +110,7 @@ const int step_missing_valu = 2000;
 const std::string data_name = "sushi";
 const int num_users = 5000;
 const int num_items = 100;
-const int number_of_samples=50000;
+const int num_samples=50000;
 const double max_value = 5.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -119,7 +119,7 @@ const int step_missing_valu = 2000;
 const std::string data_name = "jester";
 const int num_users = 2916;
 const int num_items = 140;
-const int number_of_samples=373338;
+const int num_samples=373338;
 const double max_value = 21.0;
 const int start_missing_valu = 20000;
 const int end_missing_valu = 20000;
@@ -128,7 +128,7 @@ const int step_missing_valu = 2000;
 const std::string data_name = "netflix";
 const int num_users = 542;
 const int num_items = 4495;
-const int number_of_samples=1291999;
+const int num_samples=1291999;
 const double max_value = 5.0;
 const int start_missing_valu = 100000;
 const int end_missing_valu = 100000;

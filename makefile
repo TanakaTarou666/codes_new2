@@ -2,7 +2,7 @@ CXX = g++ -std=c++17
 CXXFLAGS = -O3 -mtune=native -march=native -mfpmath=both
 #CXXFLAGS =  -g -Wall -Wextra  #debug用
 
-ARG = all
+ARG = test
 
 math_utils = src/math_utils/vector.cxx \
             src/math_utils/matrix.cxx \
@@ -36,6 +36,9 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/tfcfm_als_$(ARG): src/recom_methods/fm_als/tfcfm_als.cxx main_recom/fm_als/tfcfm_als_main.cxx $(tfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	
+.out/qfcfm_als_$(ARG): src/recom_methods/fm_als/qfcfm_als.cxx main_recom/fm_als/qfcfm_als_main.cxx $(qfcfm_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@	
+
 # fm_sgd
 .out/fm_sgd_$(ARG): src/recom_methods/fm_sgd/fm_sgd.cxx main_recom/fm_sgd/fm_sgd_main.cxx $(fm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@	

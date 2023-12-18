@@ -104,6 +104,46 @@ int SparseMatrix::nnz(int row) {
     return result;
 }
 
+SparseMatrix SparseMatrix::remove_zeros(){
+    // 非ゼロ要素の数を数える
+    int non_zero_count = 0;
+    for (int i = 0; i < nnz_; i++) {
+        if (values_[i] != 0.0) {
+            non_zero_count++;
+        }
+    }
+
+    // 新しいスパースマトリクスを作成
+    SparseMatrix non_zero_matrix(rows_, cols_, non_zero_count);
+
+    // 新しいスパースマトリクスの行ポインタ、列インデックス、データ
+    int* new_row_pointers = new int[rows_ + 1];
+    int* new_col_indices = new int[non_zero_count];
+    double* new_values = new double[non_zero_count];
+
+    int current_non_zero_index = 0;
+    new_row_pointers[0] = 0;
+
+    for (int i = 0; i < rows_; i++) {
+        for (int j = row_pointers_[i]; j < row_pointers_[i + 1]; j++) {
+            if (values_[j] != 0.0) {
+                new_col_indices[current_non_zero_index] = col_indices_[j];
+                new_values[current_non_zero_index] = values_[j];
+                current_non_zero_index++;
+            }
+        }
+        new_row_pointers[i + 1] = current_non_zero_index;
+    }
+
+    // 新しいスパースマトリクスに行ポインタ、列インデックス、データをセット
+    non_zero_matrix.set_row_pointers(new_row_pointers);
+    non_zero_matrix.set_col_indices(new_col_indices);
+    non_zero_matrix.set_values(new_values);
+    non_zero_matrix.set_nnz(non_zero_count);
+
+    return non_zero_matrix;
+}
+
 SparseMatrix& SparseMatrix::operator=(const SparseMatrix& arg) {
     if (this == &arg) {
         return *this;  // 自己代入の場合、何もしない

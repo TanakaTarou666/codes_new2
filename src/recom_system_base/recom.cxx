@@ -1,16 +1,17 @@
 #include "recom.h"
 
 Recom::Recom(int num_missing_value)
-    : tp_fn_((int)rs::max_value * 100, 0.0, "all"),
-      fp_tn_((int)rs::max_value * 100, 0.0, "all"),
-      num_missing_value_(num_missing_value),
-      sparse_missing_data_(rs::num_users, rs::num_items),
+    : num_missing_value_(num_missing_value),
       sparse_correct_data_(rs::num_users, rs::num_items),
+      sparse_missing_data_(rs::num_users, rs::num_items),
+
       missing_data_indices_(num_missing_value, 2),
-      prediction_(num_missing_value, 0, "all"),
       sparse_missing_data_cols_(num_missing_value),
+      prediction_(num_missing_value, 0, "all"),
       mae_(rs::missing_pattern),
-      auc_(rs::missing_pattern) {}
+      auc_(rs::missing_pattern),
+      tp_fn_((int)rs::max_value * 100, 0.0, "all"),
+      fp_tn_((int)rs::max_value * 100, 0.0, "all") {}
 
 void Recom::input(std::string file_name) {
     std::ifstream ifs(file_name);
@@ -56,11 +57,11 @@ void Recom::input(std::string file_name) {
     sparse_correct_data_.set_col_indices(col_indices);
     sparse_correct_data_.set_values(values);
     sparse_correct_data_.set_nnz(row_pointers[rs::num_users]);
-    sparse_missing_data_ = sparse_correct_data_;
 }
 
 void Recom::revise_missing_values(void) {
-    sparse_missing_data_ = sparse_correct_data_;
+    SparseMatrix tmp_sparse_missing_data = sparse_correct_data_;
+
     int tmprow, tmpcol;
     for (int m = 0; m < num_missing_value_;) {
         /****乱数生成****/
@@ -76,24 +77,29 @@ void Recom::revise_missing_values(void) {
         // データ行すべて欠損させないように,一行5要素は残す
         int c = 0;
         for (int i = 0; i < col_size; i++)
-            if (sparse_missing_data_(tmprow, i) == 0) c++;
+            if (tmp_sparse_missing_data(tmprow, i) == 0) c++;
         // 既に欠損していない場合
-        if (sparse_missing_data_(tmprow, tmpcol) > 0 && col_size - c > 5) {
+        if (tmp_sparse_missing_data(tmprow, tmpcol) > 0 && col_size - c > 5) {
             // 要素を0にする
-            sparse_missing_data_(tmprow, tmpcol) = 0;
+            tmp_sparse_missing_data(tmprow, tmpcol) = 0;
             // 欠損した行番号を保存
             missing_data_indices_(m, 0) = tmprow;
             // 欠損した列番号を保存
-            missing_data_indices_(m, 1) = sparse_missing_data_.dense_index(tmprow, tmpcol);
+            missing_data_indices_(m, 1) = tmp_sparse_missing_data.dense_index(tmprow, tmpcol);
             // スパースデータの列番号を保存
             sparse_missing_data_cols_[m] = tmpcol;
             m++;
         }
         seed_++;
     }
+    sparse_missing_data_ = tmp_sparse_missing_data.remove_zeros();
     sparse_missing_data_values_ = sparse_missing_data_.get_values();
     sparse_missing_data_row_pointers_ = sparse_missing_data_.get_row_pointers();
     sparse_missing_data_col_indices_ = sparse_missing_data_.get_col_indices();
+    for (int i = 0; i < rs::num_users; i++) {
+        sparse_missing_data_row_nnzs_[i] = sparse_missing_data_row_pointers_[i+1] - sparse_missing_data_row_pointers_[i];
+    }
+    missing_num_samples_ = rs::num_samples - num_missing_value_;
     return;
 }
 
@@ -107,14 +113,16 @@ void Recom::train() {
 #ifndef ARTIFICIALITY
         prev_objective_value_ = DBL_MAX;
 #endif
+        std::cout << method_name_ << ": train start " << std::endl;
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            std::cout << ": step: " << step << "\t";
+            //std::cout << ": step: " << step << "\t";
             if (calculate_convergence_criterion()) {
                 // std::cout << ": step: " << step << std::endl;
                 break;
             }
+            //std::cout << std::endl;
             if (step == rs::steps - 1) {
                 // error_detected_ = true;
                 //  std::cout << ": step: " << step << " error" << std::endl;

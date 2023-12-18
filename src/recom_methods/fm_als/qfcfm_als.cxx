@@ -1,11 +1,23 @@
-#include "tfcfm_als.h"
+#include "qfcfm_als.h"
 
-TFCFMWithALS::TFCFMWithALS(int missing_count)
-    : FMBase(missing_count), TFCRecom(missing_count), Recom(missing_count), w0_(), prev_w0_(), w_(), prev_w_(), v_(), prev_v_(), e_(), q_(), x_() {
-    method_name_ = append_current_time_if_test("TFCFM_ALS");
+QFCFMWithALS::QFCFMWithALS(int missing_count)
+    : FMBase(missing_count),
+      QFCRecom(missing_count),
+      TFCRecom(missing_count),
+      Recom(missing_count),
+      w0_(),
+      prev_w0_(),
+      w_(),
+      prev_w_(),
+      v_(),
+      prev_v_(),
+      e_(),
+      q_(),
+      x_() {
+    method_name_ = append_current_time_if_test("QFCFM_ALS");
 }
 
-void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda,
+void QFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda,
                                   double reg_parameter) {
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
@@ -28,7 +40,7 @@ void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluste
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
 }
 
-void TFCFMWithALS::set_initial_values(int seed) {
+void QFCFMWithALS::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = Vector(cluster_size_, 0.0, "all");
     w_ = Matrix(cluster_size_, sum_users_items, 0.0);
@@ -38,10 +50,11 @@ void TFCFMWithALS::set_initial_values(int seed) {
     x_ = DSSTensor(sparse_missing_data_, sum_users_items);
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
+    cluster_size_adjustments_ = Vector(cluster_size_, 1.0 / (double)cluster_size_, "all");
 
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int n = 0; n < sum_users_items; n++) {
+        for (int n = 0; n < rs::num_users + rs::num_items; n++) {
             for (int k = 0; k < latent_dimension_; k++) {
                 mt.seed(seed);
                 // ランダムに値生成
@@ -85,19 +98,15 @@ void TFCFMWithALS::set_initial_values(int seed) {
 
     // データ表示
     // for (int i = 0; i < rs::num_users; i++) {
-    //     for (int j = 0; j < x_.nnz(i); j++) {
-    //         for (int a = 0; a < 2; ++a) {
-    //         //std::cout << "i:" << i << " j:" << j << " : " << x_(i, j) << " " << x_(i,j).dense_index(a);
-    //                   //<< std::endl;
-    //                   std::cout << " " << x_(i,j).dense_index(a);
-    //         }
+    //     for (int j = 0; j < x_(i, "row"); j++) {
+    //         std::cout << "i:" << i << " j:" << j << " : " << x_(i, j)
+    //                   << std::endl;
     //     }
     // }
-
     precompute();
 }
 
-void TFCFMWithALS::precompute() {
+void QFCFMWithALS::precompute() {
     SparseVector tmp_x;
     Matrix tmp_v;
     for (int c = 0; c < cluster_size_; ++c) {
@@ -120,28 +129,29 @@ void TFCFMWithALS::precompute() {
     }
 }
 
-void TFCFMWithALS::calculate_factors() {
-    prev_w0_ = w0_;
-    prev_w_ = w_;
+void QFCFMWithALS::calculate_factors() {
     prev_v_ = v_;
+    prev_w_ = w_;
+    prev_w0_ = w0_;
 
     SparseVector tmp_x;
     double tmp_x_value;
     int tmp_x_dense_index;
 
     for (int c = 0; c < cluster_size_; ++c) {
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         double numerator_w0 = 0;
         double denominator_w0 = 0;
         int l = 0;
         for (int i = 0; i < rs::num_users; i++) {
-            double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+            double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
             for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
-                numerator_w0 += tmp_membership * (e_(c, l) - w0_[c]);
-                denominator_w0 += tmp_membership;
+                numerator_w0 += tmp_membership_times_cluster_size_adjustments * (e_(c, l) - w0_[c]);
+                denominator_w0 += tmp_membership_times_cluster_size_adjustments;
                 l++;
             }
         }
-        double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_ / 2);
+        double w0a = -numerator_w0 / (denominator_w0 + reg_parameter_/2);
         for (l = 0; l < missing_num_samples_; l++) e_(c, l) += (w0a - w0_[c]);
         w0_[c] = w0a;
     }
@@ -149,6 +159,7 @@ void TFCFMWithALS::calculate_factors() {
     // 1-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_w = w_[c].get_values();
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         double wa[sum_users_items] = {};
         double denominator_w[sum_users_items] = {};
         Vector tmp_e = e_[c];
@@ -157,18 +168,20 @@ void TFCFMWithALS::calculate_factors() {
             double denominator_w[sum_users_items] = {};
             int l = 0;
             for (int i = 0; i < rs::num_users; i++) {
-                double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+                double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
+                // double tmp_membership_times_cluster_size_adjustments = pow(membership_(c, i), fuzzifier_em_);
                 for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
                     tmp_x = x_(i, j);
                     tmp_x_value = tmp_x(a);
                     tmp_x_dense_index = tmp_x.dense_index(a);
-                    numerator_w[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
-                    denominator_w[tmp_x_dense_index] += tmp_membership * tmp_x_value * tmp_x_value;
+                    numerator_w[tmp_x_dense_index] +=
+                        tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
+                    denominator_w[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_x_value * tmp_x_value;
                     l++;
                 }
             }
             for (int i = 0; i < sum_users_items; ++i) {
-                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_ / 2);
+                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_/2);
             }
             l = 0;
             for (int i = 0; i < rs::num_users; i++) {
@@ -181,13 +194,15 @@ void TFCFMWithALS::calculate_factors() {
                 }
             }
         }
-        for (int j_ = 0; j_ < sum_users_items; ++j_) {
-            w_(c, j_) = wa[j_];
+        for (int a = 0; a < sum_users_items; ++a) {
+            w_(c, a) = wa[a];
         }
     }
+
     // 2-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_e = e_[c].get_values();
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         for (int f = 0; f < latent_dimension_; ++f) {
             double* tmp_v = v_[c][f].get_values();
             double* tmp_q = q_[c][f].get_values();
@@ -198,20 +213,21 @@ void TFCFMWithALS::calculate_factors() {
                 double numerator_v[sum_users_items] = {};
                 double denominator_v[sum_users_items] = {};
                 for (int i = 0; i < rs::num_users; i++) {
-                    double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
+                    double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
                     for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
                         tmp_x = x_(i, j);
                         tmp_x_value = tmp_x(a);
                         tmp_x_dense_index = tmp_x.dense_index(a);
                         h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
                         double tmp_h = h_value[l];
-                        numerator_v[tmp_x_dense_index] += tmp_membership * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
-                        denominator_v[tmp_x_dense_index] += tmp_membership * tmp_h * tmp_h;
+                        numerator_v[tmp_x_dense_index] +=
+                            tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
+                        denominator_v[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_h * tmp_h;
                         l++;
                     }
                 }
-                for (int j_ = 0; j_ < sum_users_items; ++j_) {
-                    if (denominator_v[j_] != 0) va[j_] = -numerator_v[j_] / (denominator_v[j_] + reg_parameter_ / 2);
+                for (int i = 0; i < sum_users_items; ++i) {
+                    if (denominator_v[i] != 0) va[i] = -numerator_v[i] / (denominator_v[i] + reg_parameter_/2);
                 }
                 l = 0;
                 for (int i = 0; i < rs::num_users; i++) {
@@ -226,8 +242,8 @@ void TFCFMWithALS::calculate_factors() {
                     }
                 }
             }
-            for (int j_ = 0; j_ < sum_users_items; ++j_) {
-                tmp_v[j_] = va[j_];
+            for (int i = 0; i < sum_users_items; ++i) {
+                tmp_v[i] = va[i];
             }
         }
     }
@@ -245,25 +261,27 @@ void TFCFMWithALS::calculate_factors() {
         }
     }
     calculate_membership();
+    calculate_cluster_size_adjustments();
 }
 
-double TFCFMWithALS::calculate_objective_value() {
-    double result = 0.0;
+double QFCFMWithALS::calculate_objective_value() {
+    double result = 0;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
-                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
+            result += pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
+                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
-    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_)) / 2;
+    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_))/2;
     return result;
 }
 
-bool TFCFMWithALS::calculate_convergence_criterion() {
+bool QFCFMWithALS::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
-    double diff =
-        squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) + frobenius_norm(prev_membership_ - membership_);
+    double diff = squared_norm(prev_w0_ - w0_) + frobenius_norm(prev_w_ - w_) + frobenius_norm(prev_v_ - v_) +
+                  frobenius_norm(prev_membership_ - membership_) + squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
     // std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
     // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";
     // std::cout << "w:" << frobenius_norm(prev_w_ - w_) << "\t";
@@ -284,7 +302,7 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
     return result;
 }
 
-void TFCFMWithALS::calculate_prediction() {
+void QFCFMWithALS::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         SparseVector tmp = make_one_hot_data(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]);
