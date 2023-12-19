@@ -117,15 +117,19 @@ void Recom::train() {
         for (int step = 0; step < rs::steps; step++) {
             calculate_factors();
             // 収束条件
-            //std::cout << ": step: " << step << "\t";
+            std::cout << ": step: " << step << "\t" <<"L:"<<calculate_objective_value()<<std::endl;;
             if (calculate_convergence_criterion()) {
-                // std::cout << ": step: " << step << std::endl;
+                 std::cout << ": step: " << step << std::endl;
                 break;
             }
             //std::cout << std::endl;
             if (step == rs::steps - 1) {
                 // error_detected_ = true;
-                //  std::cout << ": step: " << step << " error" << std::endl;
+                std::cout << ": step: " << step << " error" << std::endl;
+                break;
+            }
+            if (error_detected_) {
+                std::cout << ": step: " << step << " error" << std::endl;
                 break;
             }
         }

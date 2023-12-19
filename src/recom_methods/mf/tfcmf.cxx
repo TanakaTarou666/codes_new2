@@ -36,22 +36,20 @@ void TFCMF::calculate_factors() {
     prev_user_factors_ = user_factors_;
     for (int c = 0; c < cluster_size_; c++) {
         user_factor_values_ = user_factors_[c].get_values();
-        for (int i = 0; i < user_factors_.rows(); i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                if (sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j] != 0) {
-                    item_factor_values_ = item_factors_[c].get_values() +
-                                          sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
-                    double err = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
-                    for (int k = 0; k < latent_dimension_; k++) {
-                        err -= user_factor_values_[k] * item_factor_values_[k];
-                    }
-                    for (int k = 0; k < latent_dimension_; k++) {
-                        user_factor_values_[k] +=
-                            learning_rate_ * (2 * tmp_membership * err * item_factor_values_[k] - reg_parameter_ * user_factor_values_[k]);
-                        item_factor_values_[k] +=
-                            learning_rate_ * (2 * tmp_membership * err * user_factor_values_[k] - reg_parameter_ * item_factor_values_[k]);
-                    }
+            for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                item_factor_values_ =
+                    item_factors_[c].get_values() + sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
+                double err = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
+                for (int k = 0; k < latent_dimension_; k++) {
+                    err -= user_factor_values_[k] * item_factor_values_[k];
+                }
+                for (int k = 0; k < latent_dimension_; k++) {
+                    user_factor_values_[k] +=
+                        learning_rate_ * (2 * tmp_membership * err * item_factor_values_[k] - reg_parameter_ * user_factor_values_[k]);
+                    item_factor_values_[k] +=
+                        learning_rate_ * (2 * tmp_membership * err * user_factor_values_[k] - reg_parameter_ * item_factor_values_[k]);
                 }
             }
             user_factor_values_ += latent_dimension_;
@@ -60,18 +58,16 @@ void TFCMF::calculate_factors() {
 
     for (int c = 0; c < cluster_size_; c++) {
         user_factor_values_ = user_factors_[c].get_values();
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+        for (int i = 0; i < rs::num_users; i++) {
             dissimilarities_(c, i) = 0.0;
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                if (sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j] != 0) {
-                    item_factor_values_ = item_factors_[c].get_values() +
-                                          sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
-                    double tmp = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
-                    for (int k = 0; k < latent_dimension_; k++) {
-                        tmp -= user_factor_values_[k] * item_factor_values_[k];
-                    }
-                    dissimilarities_(c, i) += tmp * tmp;
+            for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                item_factor_values_ =
+                    item_factors_[c].get_values() + sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
+                double tmp = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
+                for (int k = 0; k < latent_dimension_; k++) {
+                    tmp -= user_factor_values_[k] * item_factor_values_[k];
                 }
+                dissimilarities_(c, i) += tmp * tmp;
             }
             user_factor_values_ += latent_dimension_;
         }
@@ -135,21 +131,8 @@ double TFCMF::calculate_objective_value() {
             result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
-        // for (int i = 0; i < rs::num_users; i++) {
-        //     user_factor_values_ = user_factors_[c].get_values() + latent_dimension_ * i;
-        //     for (int k = 0; k < latent_dimension_; k++) {
-        //         user_factors__L2Norm += user_factor_values_[k] * user_factor_values_[k];
-        //     }
-        // }
-        // for (int j = 0; j < rs::num_items; j++) {
-        //     item_factor_values_ = item_factors_[c].get_values() + latent_dimension_ * j;
-        //     for (int k = 0; k < latent_dimension_; k++) {
-        //         item_factors__L2Norm += item_factor_values_[k] * item_factor_values_[k];
-        //     }
-        // }
     }
-    // result += reg_parameter_ * (user_factors__L2Norm + item_factors__L2Norm);
-    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_));
+    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_))/2;
     return result;
 }
 

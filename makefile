@@ -28,6 +28,8 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 	$(CXX) $(CXXFLAGS) $^ -o $@	
 
 # wnmf	
+.out/wnmf_$(ARG): src/recom_methods/wnmf/wnmf.cxx main_recom/wnmf/wnmf_main.cxx $(normal_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/tfcwnmf: src/recom_methods/wnmf/tfcwnmf.cxx main_recom/wnmf/tfcwnmf_main.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 

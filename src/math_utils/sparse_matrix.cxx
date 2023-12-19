@@ -104,7 +104,7 @@ int SparseMatrix::nnz(int row) {
     return result;
 }
 
-SparseMatrix SparseMatrix::remove_zeros(){
+SparseMatrix SparseMatrix::remove_zeros() {
     // 非ゼロ要素の数を数える
     int non_zero_count = 0;
     for (int i = 0; i < nnz_; i++) {
@@ -221,16 +221,20 @@ Matrix SparseMatrix::operator*(Matrix& arg) {
     double* dataResult = result.get_values();
 
     for (int i = 0; i < rows_; i++) {
-        for (int j = 0; j < arg.cols(); j++) {
-            result(i, j) = 0.0;
+        for (int j = 0; j < numColsResult; j++) {
+            *(dataResult + j) = 0.0;
         }
-        for (int k = 0; k < (*this)(i, "row"); k++) {
-            for (int j = 0; j < arg.cols(); j++) {
-                result(i, j) += (*this)(i, k) * arg[(*this)(i, k, "index")][j];
+        int tmp_nnz = (*this).nnz(i);
+        for (int k = 0; k < tmp_nnz; k++) {
+            double* tmp_dataB = dataB + *(dataAcolindices + k) * numColsResult;
+            for (int j = 0; j < numColsResult; j++) {
+                *(dataResult + j) += *(dataA + k) * *(tmp_dataB + j);
             }
         }
+        dataA += tmp_nnz;
+        dataResult += numColsResult;
+        dataAcolindices += tmp_nnz;
     }
-
     return result;
 }
 
@@ -279,7 +283,7 @@ void SparseMatrix::set_values(double* new_values) {
 // dataをセットするメンバ関数
 void SparseMatrix::set_nnz(int nnz) { nnz_ = nnz; }
 
-SparseMatrix SparseMatrix::transpose() const {
+SparseMatrix SparseMatrix::transpose() {
     // 転置行列の行数と列数は元の行列の列数と行数になります
     SparseMatrix transposed(cols_, rows_);
 
@@ -305,16 +309,22 @@ SparseMatrix SparseMatrix::transpose() const {
     int* transposed_col_indices = new int[nnz_];
     double* transposed_values = new double[nnz_];
 
+    // 一時的な配列を用意して、各列に挿入される行の位置を管理します
+    int* current_row = new int[cols_];
+    for (int i = 0; i < cols_; i++) {
+        current_row[i] = transposed_row_pointers[i];
+    }
+
     // 転置行列を生成
     for (int i = 0; i < rows_; i++) {
         for (int j = row_pointers_[i]; j < row_pointers_[i + 1]; j++) {
             int col = col_indices_[j];
-            int dest = transposed_row_pointers[col];
+            int dest = current_row[col];
 
             transposed_col_indices[dest] = i;
             transposed_values[dest] = values_[j];
 
-            transposed_row_pointers[col]++;
+            current_row[col]++;
         }
     }
 
@@ -326,6 +336,77 @@ SparseMatrix SparseMatrix::transpose() const {
 
     // 元の行列から作成したポインタを解放
     delete[] count_non_zeros;
+    delete[] current_row;
 
     return transposed;
+}
+
+
+// SparseMatrix SparseMatrix::transpose(){
+//     // 転置行列の行数と列数は元の行列の列数と行数になります
+//     SparseMatrix transposed(cols_, rows_);
+
+//     // 転置行列の行ポインタ
+//     int* transposed_row_pointers = new int[cols_ + 1];
+
+//     // 各列に含まれる非ゼロ要素の数を数える
+//     int* count_non_zeros = new int[cols_];
+//     for (int i = 0; i < cols_; i++) {
+//         count_non_zeros[i] = 0;
+//     }
+//     for (int i = 0; i < nnz_; i++) {
+//         count_non_zeros[col_indices_[i]]++;
+//     }
+
+//     // 転置行列の行ポインタを設定
+//     transposed_row_pointers[0] = 0;
+//     for (int i = 1; i <= cols_; i++) {
+//         transposed_row_pointers[i] = transposed_row_pointers[i - 1] + count_non_zeros[i - 1];
+//     }
+
+//     // 転置行列の列インデックスとデータ
+//     int* transposed_col_indices = new int[nnz_];
+//     double* transposed_values = new double[nnz_];
+
+//     // 転置行列を生成
+//     for (int i = 0; i < rows_; i++) {
+//         for (int j = row_pointers_[i]; j < row_pointers_[i + 1]; j++) {
+//             int col = col_indices_[j];
+//             int dest = transposed_row_pointers[col];
+
+//             transposed_col_indices[dest] = i;
+//             transposed_values[dest] = values_[j];
+
+//             transposed_row_pointers[col]++;
+//         }
+//     }
+
+//     // 転置行列に行ポインタ、列インデックス、データをセット
+//     transposed.set_row_pointers(transposed_row_pointers);
+//     transposed.set_col_indices(transposed_col_indices);
+//     transposed.set_values(transposed_values);
+//     transposed.set_nnz(nnz_);
+
+//     // 元の行列から作成したポインタを解放
+//     delete[] count_non_zeros;
+
+//     return transposed;
+// }
+
+void SparseMatrix::product(Matrix& lhs, Matrix& transpose_rhs) {
+    int numrows_A = lhs.rows();
+    int numcols_A = lhs.cols();
+    int numrows_B = transpose_rhs.rows();
+    int numcols_B = transpose_rhs.cols();
+
+    for (int i = 0; i < rows_; i++) {
+        int tmp_nnz = (*this).nnz(i);
+        for (int j = 0; j < tmp_nnz; j++) {
+            double tmp_result = 0.0;
+            for (int k = 0; k < numcols_A; k++) {
+                tmp_result += lhs(i, k) * transpose_rhs((*this).dense_index(i, j), k);
+            }
+            (*this)(i, j) = tmp_result;
+        }
+    }
 }

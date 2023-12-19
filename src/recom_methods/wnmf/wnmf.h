@@ -1,7 +1,5 @@
 #include "../../recom_system_base/recom.h"
 
-#include "../../recom_system_base/recom.h"
-
 class WNMF : virtual public Recom {
    protected:
     // 潜在次元
@@ -10,6 +8,9 @@ class WNMF : virtual public Recom {
     Matrix user_factors_, item_factors_;
     Matrix prev_user_factors_, prev_item_factors_;
     double *user_factor_values_,*item_factor_values_;
+    SparseMatrix transpose_sparse_missing_data_;
+    SparseMatrix sparse_prediction_;
+    SparseMatrix transpose_sparse_prediction_;
 
    public:
     WNMF(int missing_count);

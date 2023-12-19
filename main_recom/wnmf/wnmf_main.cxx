@@ -1,14 +1,20 @@
 #include "../../src/recom_methods/wnmf/wnmf.h"
 
-int main() {
+int main(int argc, char *argv[]) {
+    int start_latent_dimension = std::stoi(argv[1]);
+    int end_latent_dimension = std::stoi(argv[2]);
+    if (check_command_args(argc, argv)) {
+        exit(1);
+    }
+
     // 時間計測
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         WNMF recom(mv);
         recom.input(rs::input_data_name);
-        for (double ld : rs::latent_dimensions) {
-            recom.set_parameters(ld);
+        for (int ld = start_latent_dimension; ld <= end_latent_dimension; ld++) {
+            recom.set_parameters(rs::latent_dimensions[ld]);
             for (int i = 0; i < rs::missing_pattern; i++) {
                 // データを欠損
                 recom.revise_missing_values();
