@@ -132,6 +132,47 @@ void FMWithALS::calculate_factors() {
         w_[a] = wa[a];
     }
 
+        // // 1-way interactions
+    // double wa[sum_users_items] = {};
+    // for (int b = 0; b < 180; ++b) {
+    //     for (int a = 0; a < 2; ++a) {
+    //         double numerator_w[sum_users_items] = {};
+    //         double denominator_w[sum_users_items] = {};
+    //         l = 0;
+    //         for (int i = 0; i < rs::num_users; i++) {
+    //             for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                 tmp_x = x_(i, j);
+    //                 double tmp_x_value = tmp_x(a);
+    //                 int tmp_x_dense_index = tmp_x.dense_index(a);
+    //                 if (tmp_x.dense_index(a) == b) {
+    //                     numerator_w[tmp_x_dense_index] += (e_[l] - w_[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
+    //                     denominator_w[tmp_x_dense_index] += tmp_x_value * tmp_x_value;
+    //                     l++;
+    //                 }
+    //             }
+    //         }
+    //         for (int i = 0; i < sum_users_items; ++i) {
+    //             if (denominator_w[i] != 0 && std::isfinite(denominator_w[i])) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_ / 2);
+    //         }
+    //         l = 0;
+    //         for (int i = 0; i < rs::num_users; i++) {
+    //             for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                 tmp_x = x_(i, j);
+    //                 double tmp_x_value = tmp_x(a);
+    //                 int tmp_x_dense_index = tmp_x.dense_index(a);
+    //                 if (tmp_x.dense_index(a) == b) {
+    //                     e_[l] += (wa[tmp_x_dense_index] - w_[tmp_x_dense_index]) * tmp_x_value;
+    //                     l++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     for (int a = 0; a < sum_users_items; ++a) {
+    //         w_[a] = wa[a];
+    //     }
+    // }
+
+
     // 2-way interactions
     for (int f = 0; f < latent_dimension_; ++f) {
         double* tmp_v = v_[f].get_values();

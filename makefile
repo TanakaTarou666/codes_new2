@@ -50,7 +50,7 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 	$(CXX) $(CXXFLAGS) $^ -o $@	
 
 # result 
-.out/result : main_recom/result/result.cxx src/recom_methods/mf/mf.cxx src/recom_methods/mf/tfcmf.cxx src/recom_methods/mf/qfcmf.cxx src/recom_methods/fm_als/fm_als.cxx src/recom_methods/fm_sgd/fm_sgd.cxx src/recom_methods/fm_sgd/tfcfm_sgd.cxx src/recom_methods/fm_sgd/qfcfm_sgd.cxx $(qfcfm_recom)
+.out/result : main_recom/result/result.cxx src/recom_methods/mf/mf.cxx src/recom_methods/mf/tfcmf.cxx src/recom_methods/mf/qfcmf.cxx src/recom_methods/fm_als/fm_als.cxx src/recom_methods/fm_als/tfcfm_als.cxx src/recom_methods/fm_als/qfcfm_als.cxx src/recom_methods/fm_sgd/fm_sgd.cxx src/recom_methods/fm_sgd/tfcfm_sgd.cxx src/recom_methods/fm_sgd/qfcfm_sgd.cxx $(qfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 
