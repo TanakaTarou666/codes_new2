@@ -1,18 +1,20 @@
 #include "../../src/recom_methods/fm_als/fm_als.h"
+#include "../../src/recom_methods/fm_als/qfcfm_als.h"
+#include "../../src/recom_methods/fm_als/tfcfm_als.h"
 #include "../../src/recom_methods/fm_sgd/fm_sgd.h"
+#include "../../src/recom_methods/fm_sgd/tfcfm_sgd.h"
 #include "../../src/recom_methods/mf/mf.h"
 #include "../../src/recom_methods/mf/qfcmf.h"
 #include "../../src/recom_methods/mf/tfcmf.h"
-#include "../../src/recom_methods/fm_sgd/tfcfm_sgd.h"
 
-
-//#define __MF__
+// #define __MF__
 #define __TFCMF__
 #define __QFCMF__
-//#define __FM_SGD__
-//#define __TFCFM_SGD__
+// #define __FM_SGD__
+// #define __TFCFM_SGD__
 #define __FM_ALS__
-
+#define __TFCFM_ALS__
+// #define __QFCFM_ALS__
 
 int main() {
 #if defined __MF__
@@ -92,7 +94,7 @@ int main() {
 #endif
 
 #if defined __TFCFM_SGD__
-for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         TFCFMWithSGD recom(mv);
         recom.input(rs::input_data_name);
         for (double ld : rs::latent_dimensions) {
@@ -111,7 +113,7 @@ for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step
         }
         recom.output_high_score_in_tally_result();
     }
-    #endif
+#endif
 
 #if defined __FM_ALS__
     for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
@@ -124,6 +126,46 @@ for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step
             }
         }
         fm_als.output_high_score_in_tally_result();
+    }
+#endif
+
+#if defined __TFCFM_ALS__
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
+        TFCFMWithALS tfcfm_als(mv);
+        tfcfm_als.input(rs::input_data_name);
+        for (double ld : rs::latent_dimensions) {
+            for (double rp : rs::reg_parameters) {
+                for (int c : rs::cluster_size) {
+                    for (double em : rs::fuzzifier_em) {
+                        for (double lambda : rs::fuzzifier_lambda) {
+                            tfcfm_als.set_parameters(ld, c, em, lambda, rp);
+                            tfcfm_als.tally_result();
+                        }
+                    }
+                }
+            }
+        }
+        tfcfm_als.output_high_score_in_tally_result();
+    }
+#endif
+
+#if defined __QFCFM_ALS__
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
+        QFCFMWithALS tfcfm_als(mv);
+        qfcfm_als.input(rs::input_data_name);
+        for (double ld : rs::latent_dimensions) {
+            for (double rp : rs::reg_parameters) {
+                for (int c : rs::cluster_size) {
+                    for (double em : rs::fuzzifier_em) {
+                        for (double lambda : rs::fuzzifier_lambda) {
+                            qfcfm_als.set_parameters(ld, c, em, lambda, rp);
+                            qfcfm_als.tally_result();
+                        }
+                    }
+                }
+            }
+        }
+        qfcfm_als.output_high_score_in_tally_result();
     }
 #endif
 
