@@ -7,8 +7,7 @@ WNMF::WNMF(int missing_pattern)
       prev_user_factors_(),
       prev_item_factors_(),
       transpose_sparse_missing_data_(),
-      sparse_prediction_(),
-      transpose_sparse_prediction_() {
+      sparse_prediction_(){
     method_name_ = append_current_time_if_test("WNMF");
 }
 
@@ -59,38 +58,26 @@ void WNMF::set_initial_values(int seed) {
 void WNMF::calculate_factors() {
     prev_item_factors_ = item_factors_;
     prev_user_factors_ = user_factors_;
-    // 更新式W
-    // sparse_prediction_.product(user_factors_, item_factors_);
-    // Matrix item_numerator = transpose_sparse_missing_data_ * user_factors_;
-    // Matrix item_denominator = sparse_prediction_.transpose() * user_factors_;
-    // for (int j = 0; j < rs::num_items; j++) {
-    //     for (int k = 0; k < latent_dimension_; k++) {
-    //         if (item_denominator(j, k) == 0) item_denominator(j, k) = 1.0e-07;
-    //         item_factors_(j, k) *= (item_numerator(j, k) / item_denominator(j, k));
-    //     }
-    // }
-    // //  更新式H
-    // sparse_prediction_.product(user_factors_, item_factors_);
-    // Matrix user_numerator = sparse_missing_data_ * item_factors_;
-    // Matrix user_denominator = sparse_prediction_ * item_factors_;
-    // for (int i = 0; i < rs::num_users; i++) {
-    //     for (int k = 0; k < latent_dimension_; k++) {
-    //         if (user_denominator(i, k) == 0) user_denominator(i, k) = 1.0e-07;
-    //         user_factors_(i, k) *= (user_numerator(i, k) / user_denominator(i, k));
-    //     }
-    // }
-    // std::cout << 22 << std::endl;
-    //  std::cout << "user" << std::endl;
-    //  std::cout << user_factors_ << std::endl;
-    //  std::cout << "item" << std::endl;
-    //  std::cout << item_factors_ << std::endl;
-    //  std::cout << "積" << std::endl;
-    //  std::cout << sparse_missing_data_ * item_factors_ << std::endl;
-    //  sparse_prediction_.product(user_factors_,item_factors_);
-    std::cout << "1" << std::endl;
-    sparse_prediction_.print_values();
-    std::cout << "2" << std::endl;
-    sparse_prediction_.transpose().print_values();
+    // 更新式H
+    sparse_prediction_.product(user_factors_, item_factors_);
+    Matrix item_numerator = transpose_sparse_missing_data_ * user_factors_;
+    Matrix item_denominator = sparse_prediction_.transpose() * user_factors_;
+    for (int j = 0; j < rs::num_items; j++) {
+        for (int k = 0; k < latent_dimension_; k++) {
+            if (item_denominator(j, k) == 0) item_denominator(j, k) = 1.0e-07;
+            item_factors_(j, k) *= (item_numerator(j, k) / item_denominator(j, k));
+        }
+    }
+    //  更新式W
+    sparse_prediction_.product(user_factors_, item_factors_);
+    Matrix user_numerator = sparse_missing_data_ * item_factors_;
+    Matrix user_denominator = sparse_prediction_ * item_factors_;
+    for (int i = 0; i < rs::num_users; i++) {
+        for (int k = 0; k < latent_dimension_; k++) {
+            if (user_denominator(i, k) == 0) user_denominator(i, k) = 1.0e-07;
+            user_factors_(i, k) *= (user_numerator(i, k) / user_denominator(i, k));
+        }
+    }
 }
 
 double WNMF::calculate_objective_value() {

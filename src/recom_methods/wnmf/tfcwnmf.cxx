@@ -7,13 +7,15 @@ TFCWNMF::TFCWNMF(int missing_count)
       item_factors_(),
       prev_user_factors_(),
       prev_item_factors_(),
-      observation_indicator_(),
-      transposed_observation_indicator_(),
-      transposed_sparse_missing_data_() {
-    method_name_ = "TFCWNMF";
+      transpose_sparse_missing_data_(),
+      sparse_prediction_(),
+      tmp_user_factors_(),
+      tmp_item_factors_(),
+      tmp_membership_() {
+    method_name_ = append_current_time_if_test("TFCWNMF");
 }
 
-void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda) {
+void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_lambda) {
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
@@ -29,8 +31,8 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
 #endif
     cluster_size_ = cluster_size;
     fuzzifier_em_ = fuzzifier_em;
-    fuzzifier_Lambda_ = fuzzifier_Lambda;
-    parameters_ = {(double)cluster_size_, fuzzifier_em_, fuzzifier_Lambda_, (double)latent_dimension_};
+    fuzzifier_lambda_ = fuzzifier_lambda;
+    parameters_ = {(double)cluster_size_, fuzzifier_em_, fuzzifier_lambda_, (double)latent_dimension_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
     user_factors_ = Tensor(cluster_size_, rs::num_users, latent_dimension_);
     item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
@@ -79,87 +81,64 @@ void TFCWNMF::set_initial_values(int seed) {
             seed++;
         }
         for (int i = 0; i < cluster_size_; i++) {
-            membership_(i,k) = tmp_Mem[i];
+            membership_(i, k) = tmp_Mem[i];
         }
     }
-    observation_indicator_ = sparse_missing_data_;
-    for (int i = 0; i < user_factors_.rows(); i++) {
-        for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-            if (observation_indicator_(i, j) != 0) {
-                observation_indicator_(i, j) = 1.0;
-            }
-        }
-    }
-    transposed_observation_indicator_ = observation_indicator_.transpose();
-    transposed_sparse_missing_data_ = sparse_missing_data_.transpose();
+    tmp_membership_ = SparseMatrix(rs::num_users, "diag");
+    transpose_sparse_missing_data_ = sparse_missing_data_.transpose();
+    sparse_prediction_ = sparse_missing_data_;
 }
 
 void TFCWNMF::calculate_factors() {
     prev_item_factors_ = item_factors_;
     prev_user_factors_ = user_factors_;
-
-    Matrix item_numerator;
-    Matrix item_denominator;
-    SparseMatrix transposed_users_dot_items = transposed_sparse_missing_data_;
-
+    // 更新式H
     for (int c = 0; c < cluster_size_; c++) {
-        double tmp_diagonalMembership[rs::num_users];
+        tmp_user_factors_ = user_factors_[c];
+        tmp_item_factors_ = item_factors_[c];
         for (int i = 0; i < rs::num_users; i++) {
-            tmp_diagonalMembership[i] = pow(membership_[c][i], fuzzifier_em_);
+            tmp_membership_(i, 0) = pow(membership_(c, i), fuzzifier_em_);
         }
-        SparseMatrix diagonal_membership(rs::num_users, tmp_diagonalMembership, "diag");
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                if (sparse_missing_data_(i, j) != 0) {
-                    transposed_users_dot_items(j, i) = user_factors_[c][i] * item_factors_[c][sparse_missing_data_(i, j, "index")];
-                }
-            }
-        }
-        Matrix membership_dot_user_factor = diagonal_membership * user_factors_[c];
-        item_numerator = transposed_sparse_missing_data_ * membership_dot_user_factor;
-        item_denominator = transposed_users_dot_items * membership_dot_user_factor;
-        for (int row = 0; row < item_factors_.rows(); row++) {
-            for (int col = 0; col < item_factors_.cols(); col++) {
-                if (item_denominator(row, col) != 0) {
-                    item_factors_[c](row, col) *= item_numerator(row, col) / item_denominator(row, col);
-                }
+        sparse_prediction_.product(tmp_user_factors_, tmp_item_factors_);
+        Matrix tmp = tmp_membership_ * tmp_item_factors_;
+        Matrix item_numerator = transpose_sparse_missing_data_ * tmp;
+        Matrix item_denominator = sparse_prediction_.transpose() * tmp;
+        for (int j = 0; j < rs::num_items; j++) {
+            for (int k = 0; k < latent_dimension_; k++) {
+                if (item_denominator(j, k) == 0) item_denominator(j, k) = 1.0e-07;
+                item_factors_[c](j, k) *= (item_numerator(j, k) / item_denominator(j, k));
             }
         }
     }
-
-    Matrix user_numerator;
-    Matrix user_denominator;
-    SparseMatrix users_dot_items = sparse_missing_data_;
-
+    //  更新式W
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                if (sparse_missing_data_(i, j) != 0) {
-                    users_dot_items(i, j) = user_factors_[c][i] * item_factors_[c][sparse_missing_data_(i, j, "index")];
-                }
-            }
-        }
-        user_numerator = sparse_missing_data_ * item_factors_[c];
-        user_denominator = users_dot_items * item_factors_[c];
-        for (int row = 0; row < user_factors_.rows(); row++) {
-            for (int col = 0; col < user_factors_.cols(); col++) {
-                if (user_denominator(row, col) != 0) {
-                    user_factors_[c](row, col) *= user_numerator(row, col) / user_denominator(row, col);
-                }
+        tmp_user_factors_ = user_factors_[c];
+        tmp_item_factors_ = item_factors_[c];
+        sparse_prediction_.product(tmp_user_factors_, tmp_item_factors_);
+        Matrix user_numerator = sparse_missing_data_ * tmp_item_factors_;
+        Matrix user_denominator = sparse_prediction_ * tmp_item_factors_;
+        for (int i = 0; i < rs::num_users; i++) {
+            for (int k = 0; k < latent_dimension_; k++) {
+                if (user_denominator(i, k) == 0) user_denominator(i, k) = 1.0e-07;
+                user_factors_[c](i, k) *= (user_numerator(i, k) / user_denominator(i, k));
             }
         }
     }
-
+    
     for (int c = 0; c < cluster_size_; c++) {
-        for (int i = 0; i < sparse_missing_data_.rows(); i++) {
+        user_factor_values_ = user_factors_[c].get_values();
+        for (int i = 0; i < rs::num_users; i++) {
             dissimilarities_(c, i) = 0.0;
-            for (int j = 0; j < sparse_missing_data_(i, "row"); j++) {
-                if (sparse_missing_data_(i, j) != 0) {
-                    double tmp = 0.0;
-                    tmp = (sparse_missing_data_(i, j) - user_factors_[c][i] * item_factors_[c][sparse_missing_data_(i, j, "index")]);
-                    dissimilarities_(c, i) = tmp * tmp;
+            for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+                item_factor_values_ =
+                    item_factors_[c].get_values() + sparse_missing_data_col_indices_[sparse_missing_data_row_pointers_[i] + j] * latent_dimension_;
+                double tmp = sparse_missing_data_values_[sparse_missing_data_row_pointers_[i] + j];
+                for (int k = 0; k < latent_dimension_; k++) {
+                    tmp -= user_factor_values_[k] * item_factor_values_[k];
                 }
+                dissimilarities_(c, i) += tmp * tmp;
             }
+            user_factor_values_ += latent_dimension_;
         }
     }
     calculate_membership();
@@ -170,8 +149,8 @@ double TFCWNMF::calculate_objective_value() {
     double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += pow(membership_[c][i], fuzzifier_em_) * dissimilarities_[c][i];
-            +1 / (fuzzifier_Lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_[c][i], fuzzifier_em_) - 1);
+            result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
     return result;
@@ -201,10 +180,8 @@ void TFCWNMF::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {
-            prediction_[index] += membership_[c][missing_data_indices_[index][0]] *
-                                  (user_factors_[c][missing_data_indices_[index][0]] * item_factors_[c][missing_data_indices_[index][1]]);
+            prediction_[index] += membership_(c, missing_data_indices_(index, 0)) *
+                                  (user_factors_[c][missing_data_indices_(index, 0)] * item_factors_[c][missing_data_indices_(index, 1)]);
         }
-        std::cout << "Prediction:" << prediction_[index]
-                  << " SparseCorrectData:" << sparse_correct_data_(missing_data_indices_[index][0], missing_data_indices_[index][1]) << std::endl;
     }
 }

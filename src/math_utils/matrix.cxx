@@ -1,6 +1,7 @@
 #include "matrix.h"
 
-Matrix::Matrix(int rows, int cols) : rows_(rows), cols_(cols), values_(new double[rows * cols]) {}
+Matrix::Matrix(int rows, int cols) : rows_(rows), cols_(cols), values_(new double[rows * cols]) {
+}
 
 Matrix::Matrix(int rows, int cols, double arg) : rows_(rows), cols_(cols), values_(new double[rows * cols]) {
     for (int i = 0; i < rows * cols; i++) {

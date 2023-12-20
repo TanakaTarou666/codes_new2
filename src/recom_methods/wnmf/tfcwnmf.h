@@ -9,8 +9,11 @@ class TFCWNMF : virtual public TFCRecom {
     Tensor user_factors_, item_factors_;
     Tensor prev_user_factors_, prev_item_factors_;
     double *user_factor_values_,*item_factor_values_;
-    SparseMatrix observation_indicator_,transposed_observation_indicator_;
-    SparseMatrix transposed_sparse_missing_data_;
+    //計算用
+    SparseMatrix transpose_sparse_missing_data_;
+    SparseMatrix sparse_prediction_;
+    Matrix tmp_user_factors_, tmp_item_factors_;
+    SparseMatrix tmp_membership_;
 
    public:
     TFCWNMF(int missing_pattern);

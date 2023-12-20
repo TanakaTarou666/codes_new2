@@ -15,7 +15,7 @@ class SparseMatrix {
     SparseMatrix(int rows, int cols, int nnz);
     SparseMatrix();
     SparseMatrix(const SparseMatrix& arg);
-    SparseMatrix(int size, double* diagonalValues, const char* s);
+    SparseMatrix(int size, const char* s);
     ~SparseMatrix();
     double& operator()(int row, int index);
     double operator()(int row, int index) const;

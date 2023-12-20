@@ -26,22 +26,22 @@ const int steps = 2000;
 
 #if defined TEST
 const std::string data_name = "artificiality";
-const double latent_dimensions[] = {2.0};
+const double latent_dimensions[] = {5.0};
 const double reg_parameters[] = {0.01};
 const double learning_rates[] = {0.001};
-const int cluster_size[] = {2};
+const int cluster_size[] = {5};
 const double fuzzifier_em[] = {1.001};
 const double fuzzifier_lambda[] = {1000};
 const double convergence_criteria = 0.011;
-const int missing_pattern = 4;
-const int num_initial_values = 4;
+const int missing_pattern = 1;
+const int num_initial_values = 1;
 const int steps = 2000;
-const int num_users = 5;
-const int num_items = 6;
+const int num_users = 80;
+const int num_items = 100;
 const int num_samples=8000;
 const double max_value = 4.0;
-const int start_missing_valu = 2;
-const int end_missing_valu = 2;
+const int start_missing_valu = 5000;
+const int end_missing_valu = 5000;
 const int step_missing_valu = 1000;
 #elif defined ARTIFICIALITY
 const std::string data_name = "artificiality";

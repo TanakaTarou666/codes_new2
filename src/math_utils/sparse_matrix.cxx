@@ -39,7 +39,7 @@ SparseMatrix::SparseMatrix(const SparseMatrix& arg) : rows_(arg.rows_), cols_(ar
     }
 }
 
-SparseMatrix::SparseMatrix(int size, double* diagonalValues, const char* s) : rows_(size), cols_(size) {
+SparseMatrix::SparseMatrix(int size, const char* s) : rows_(size), cols_(size) {
     if (s != "diag") return;
     // 対角行列の場合、非ゼロ要素の数は size となります
     nnz_ = size;
@@ -53,7 +53,6 @@ SparseMatrix::SparseMatrix(int size, double* diagonalValues, const char* s) : ro
     for (int i = 0; i < size; i++) {
         row_pointers_[i] = i;
         col_indices_[i] = i;
-        values_[i] = diagonalValues[i];
     }
 
     // 行ポインタの最後を設定
@@ -213,7 +212,7 @@ SparseMatrix& SparseMatrix::operator=(SparseMatrix&& arg) {
 Matrix SparseMatrix::operator*(Matrix& arg) {
     int numRowsResult = rows_;
     int numColsResult = arg.cols();
-    Matrix result(numRowsResult, numColsResult);
+    Matrix result(numRowsResult, numColsResult,0.0);
     double* dataA = (*this).get_values();
     int* dataArowpointers = (*this).get_row_pointers();
     int* dataAcolindices = (*this).get_col_indices();
@@ -340,58 +339,6 @@ SparseMatrix SparseMatrix::transpose() {
 
     return transposed;
 }
-
-
-// SparseMatrix SparseMatrix::transpose(){
-//     // 転置行列の行数と列数は元の行列の列数と行数になります
-//     SparseMatrix transposed(cols_, rows_);
-
-//     // 転置行列の行ポインタ
-//     int* transposed_row_pointers = new int[cols_ + 1];
-
-//     // 各列に含まれる非ゼロ要素の数を数える
-//     int* count_non_zeros = new int[cols_];
-//     for (int i = 0; i < cols_; i++) {
-//         count_non_zeros[i] = 0;
-//     }
-//     for (int i = 0; i < nnz_; i++) {
-//         count_non_zeros[col_indices_[i]]++;
-//     }
-
-//     // 転置行列の行ポインタを設定
-//     transposed_row_pointers[0] = 0;
-//     for (int i = 1; i <= cols_; i++) {
-//         transposed_row_pointers[i] = transposed_row_pointers[i - 1] + count_non_zeros[i - 1];
-//     }
-
-//     // 転置行列の列インデックスとデータ
-//     int* transposed_col_indices = new int[nnz_];
-//     double* transposed_values = new double[nnz_];
-
-//     // 転置行列を生成
-//     for (int i = 0; i < rows_; i++) {
-//         for (int j = row_pointers_[i]; j < row_pointers_[i + 1]; j++) {
-//             int col = col_indices_[j];
-//             int dest = transposed_row_pointers[col];
-
-//             transposed_col_indices[dest] = i;
-//             transposed_values[dest] = values_[j];
-
-//             transposed_row_pointers[col]++;
-//         }
-//     }
-
-//     // 転置行列に行ポインタ、列インデックス、データをセット
-//     transposed.set_row_pointers(transposed_row_pointers);
-//     transposed.set_col_indices(transposed_col_indices);
-//     transposed.set_values(transposed_values);
-//     transposed.set_nnz(nnz_);
-
-//     // 元の行列から作成したポインタを解放
-//     delete[] count_non_zeros;
-
-//     return transposed;
-// }
 
 void SparseMatrix::product(Matrix& lhs, Matrix& transpose_rhs) {
     int numrows_A = lhs.rows();
