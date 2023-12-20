@@ -1,8 +1,8 @@
 #include <iomanip>
 
 //#define ARTIFICIALITY
-#define TEST
-//#define MOVIE
+//#define TEST
+#define MOVIE
 //#define BOOK
 
 namespace rs {
@@ -12,7 +12,7 @@ namespace rs {
 #endif
 
 #if !defined ARTIFICIALITY
-const double latent_dimensions[] = {1.0, 2.0, 3.0};
+const double latent_dimensions[] = {5.0,3.0, 2.0, 1.0};
 const double reg_parameters[] = {0.01, 0.05, 0.09, 0.13};
 const double learning_rates[] = {0.001};
 const int cluster_size[] = {2, 3, 4, 5};
