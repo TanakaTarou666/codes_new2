@@ -13,6 +13,7 @@ class FMWithALS : virtual public FMBase {
     Matrix v_, prev_v_, q_;
     // データ
     DSSTensor x_;
+    SparseMatrix  transpose_x_;
 
    public:
     FMWithALS(int missing_count);

@@ -8,13 +8,13 @@
 #include "../../src/recom_methods/mf/tfcmf.h"
 
 // #define __MF__
-#define __TFCMF__
-#define __QFCMF__
+//#define __TFCMF__
+//#define __QFCMF__
 // #define __FM_SGD__
 // #define __TFCFM_SGD__
-#define __FM_ALS__
-#define __TFCFM_ALS__
-// #define __QFCFM_ALS__
+//#define __FM_ALS__
+//#define __TFCFM_ALS__
+#define __QFCFM_ALS__
 
 int main() {
 #if defined __MF__
@@ -151,7 +151,7 @@ int main() {
 
 #if defined __QFCFM_ALS__
     for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
-        QFCFMWithALS tfcfm_als(mv);
+        QFCFMWithALS qfcfm_als(mv);
         qfcfm_als.input(rs::input_data_name);
         for (double ld : rs::latent_dimensions) {
             for (double rp : rs::reg_parameters) {

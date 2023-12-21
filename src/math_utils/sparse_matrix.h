@@ -44,6 +44,7 @@ class SparseMatrix {
     void set_nnz(int nnz);
     SparseMatrix transpose();
     void product(Matrix& lhs, Matrix& rhs);
+    SparseMatrix one_hot_encode();
 };
 
 

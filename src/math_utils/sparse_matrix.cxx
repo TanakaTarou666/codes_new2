@@ -212,7 +212,7 @@ SparseMatrix& SparseMatrix::operator=(SparseMatrix&& arg) {
 Matrix SparseMatrix::operator*(Matrix& arg) {
     int numRowsResult = rows_;
     int numColsResult = arg.cols();
-    Matrix result(numRowsResult, numColsResult,0.0);
+    Matrix result(numRowsResult, numColsResult, 0.0);
     double* dataA = (*this).get_values();
     int* dataArowpointers = (*this).get_row_pointers();
     int* dataAcolindices = (*this).get_col_indices();
@@ -356,4 +356,28 @@ void SparseMatrix::product(Matrix& lhs, Matrix& transpose_rhs) {
             (*this)(i, j) = tmp_result;
         }
     }
+}
+
+SparseMatrix SparseMatrix::one_hot_encode() {
+    // 一時的な行列を作成する（要素が全てゼロの疎行列）
+    SparseMatrix encoded(nnz_, rows_ + cols_, nnz_ * 2);
+
+    double* encoded_values = encoded.get_values();
+    int* encoded_col_indices = encoded.get_col_indices();
+    int* encoded_row_pointers = encoded.get_row_pointers();
+    for (int i = 0; i <= nnz_; i++) {
+        encoded_row_pointers[i] = 2*i;
+    }
+    int k = 0;
+    for (int i = 0; i < rows_; i++) {
+        for (int j = 0; j < (*this).nnz(i); j++) {
+            encoded_values[k] = 1.0;
+            encoded_col_indices[k] = i;
+            k++;
+            encoded_values[k] = 1.0;
+            encoded_col_indices[k] = rows_ + (*this).dense_index(i,j);
+            k++;
+        }
+    }
+    return encoded;
 }
