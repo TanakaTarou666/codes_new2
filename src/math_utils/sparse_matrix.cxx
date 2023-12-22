@@ -371,10 +371,10 @@ SparseMatrix SparseMatrix::one_hot_encode() {
     int k = 0;
     for (int i = 0; i < rows_; i++) {
         for (int j = 0; j < (*this).nnz(i); j++) {
-            encoded_values[k] = 1.0;
+            encoded_values[k] = i;//1
             encoded_col_indices[k] = i;
             k++;
-            encoded_values[k] = 1.0;
+            encoded_values[k] = i;//1
             encoded_col_indices[k] = rows_ + (*this).dense_index(i,j);
             k++;
         }
