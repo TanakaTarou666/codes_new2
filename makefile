@@ -32,6 +32,8 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 	$(CXX) $(CXXFLAGS) $^ -o $@
 .out/tfcwnmf_$(ARG): src/recom_methods/wnmf/tfcwnmf.cxx main_recom/wnmf/tfcwnmf_main.cxx $(tfc_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
+.out/qfcwnmf_$(ARG): src/recom_methods/wnmf/qfcwnmf.cxx main_recom/wnmf/qfcwnmf_main.cxx $(qfc_recom)
+	$(CXX) $(CXXFLAGS) $^ -o $@	
 
 # fm_als
 .out/fm_als_$(ARG): src/recom_methods/fm_als/fm_als.cxx main_recom/fm_als/fm_als_main.cxx $(fm_recom)
@@ -50,7 +52,7 @@ qfcfm_recom = src/recom_system_base/qfc_recom.cxx src/recom_system_base/tfc_reco
 	$(CXX) $(CXXFLAGS) $^ -o $@	
 
 # result 
-.out/result : main_recom/result/result.cxx src/recom_methods/mf/mf.cxx src/recom_methods/mf/tfcmf.cxx src/recom_methods/mf/qfcmf.cxx src/recom_methods/fm_als/fm_als.cxx src/recom_methods/fm_als/tfcfm_als.cxx src/recom_methods/fm_als/qfcfm_als.cxx src/recom_methods/fm_sgd/fm_sgd.cxx src/recom_methods/fm_sgd/tfcfm_sgd.cxx src/recom_methods/fm_sgd/qfcfm_sgd.cxx $(qfcfm_recom)
+.out/result : main_recom/result/result.cxx src/recom_methods/mf/mf.cxx src/recom_methods/mf/tfcmf.cxx src/recom_methods/mf/qfcmf.cxx src/recom_methods/wnmf/wnmf.cxx src/recom_methods/wnmf/tfcwnmf.cxx src/recom_methods/wnmf/qfcwnmf.cxx src/recom_methods/fm_als/fm_als.cxx src/recom_methods/fm_als/tfcfm_als.cxx src/recom_methods/fm_als/qfcfm_als.cxx src/recom_methods/fm_sgd/fm_sgd.cxx src/recom_methods/fm_sgd/tfcfm_sgd.cxx src/recom_methods/fm_sgd/qfcfm_sgd.cxx $(qfcfm_recom)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 

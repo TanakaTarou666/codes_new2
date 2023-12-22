@@ -1,7 +1,8 @@
-#include "tfcwnmf.h"
+#include "qfcwnmf.h"
 
-TFCWNMF::TFCWNMF(int missing_count)
-    : TFCRecom(missing_count),
+QFCWNMF::QFCWNMF(int missing_count)
+    : QFCRecom(missing_count),
+      TFCRecom(missing_count),
       Recom(missing_count),
       user_factors_(),
       item_factors_(),
@@ -12,10 +13,10 @@ TFCWNMF::TFCWNMF(int missing_count)
       tmp_user_factors_(),
       tmp_item_factors_(),
       tmp_membership_() {
-    method_name_ = append_current_time_if_test("TFCWNMF");
+    method_name_ = append_current_time_if_test("QFCWNMF");
 }
 
-void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_lambda) {
+void QFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_lambda) {
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
@@ -33,12 +34,13 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
     fuzzifier_em_ = fuzzifier_em;
     fuzzifier_lambda_ = fuzzifier_lambda;
     parameters_ = {(double)latent_dimension_,(double)cluster_size_, fuzzifier_em_, fuzzifier_lambda_};
+    //parameters_ = {(double)cluster_size_, fuzzifier_em_, fuzzifier_lambda_,(double)latent_dimension_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
     user_factors_ = Tensor(cluster_size_, rs::num_users, latent_dimension_);
     item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
 }
 
-void TFCWNMF::set_initial_values(int seed) {
+void QFCWNMF::set_initial_values(int seed) {
     seed *= 1000000;
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
@@ -60,6 +62,8 @@ void TFCWNMF::set_initial_values(int seed) {
     }
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
+    cluster_size_adjustments_ = Vector(cluster_size_, 1.0 / (double)cluster_size_, "all");
+    // cluster_size_adjustments_ = Vector(cluster_size_, 1.0, "all");
     for (int k = 0; k < rs::num_users; k++) {
         double tmp_Mem[cluster_size_];
         tmp_Mem[cluster_size_ - 1] = 1.0;
@@ -89,15 +93,16 @@ void TFCWNMF::set_initial_values(int seed) {
     sparse_prediction_ = sparse_missing_data_;
 }
 
-void TFCWNMF::calculate_factors() {
+void QFCWNMF::calculate_factors() {
     prev_item_factors_ = item_factors_;
     prev_user_factors_ = user_factors_;
     // 更新式H
     for (int c = 0; c < cluster_size_; c++) {
         tmp_user_factors_ = user_factors_[c];
         tmp_item_factors_ = item_factors_[c];
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         for (int i = 0; i < rs::num_users; i++) {
-            tmp_membership_(i, 0) = pow(membership_(c, i), fuzzifier_em_);
+            tmp_membership_(i, 0) = pow(membership_(c, i), fuzzifier_em_) * tmp_cluster_size_adjustments;
         }
         sparse_prediction_.product(tmp_user_factors_, tmp_item_factors_);
         Matrix tmp = tmp_membership_ * tmp_item_factors_;
@@ -124,7 +129,7 @@ void TFCWNMF::calculate_factors() {
             }
         }
     }
-    
+
     for (int c = 0; c < cluster_size_; c++) {
         user_factor_values_ = user_factors_[c].get_values();
         for (int i = 0; i < rs::num_users; i++) {
@@ -142,25 +147,28 @@ void TFCWNMF::calculate_factors() {
         }
     }
     calculate_membership();
+
+    calculate_cluster_size_adjustments();
+    std::cout << cluster_size_adjustments_ << std::endl;
 }
 
-double TFCWNMF::calculate_objective_value() {
+double QFCWNMF::calculate_objective_value() {
     double result;
-    double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
-            result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
-                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
+            result += pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
+                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
     return result;
 }
 
-bool TFCWNMF::calculate_convergence_criterion() {
+bool QFCWNMF::calculate_convergence_criterion() {
     bool result = false;
 #if defined ARTIFICIALITY
     double diff = frobenius_norm(prev_user_factors_ - user_factors_) + frobenius_norm(prev_item_factors_ - item_factors_) +
-                  frobenius_norm(prev_membership_ - membership_);
+                  frobenius_norm(prev_membership_ - membership_) + squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
 #else
     objective_value_ = calculate_objective_value();
     double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
@@ -176,7 +184,7 @@ bool TFCWNMF::calculate_convergence_criterion() {
     return result;
 }
 
-void TFCWNMF::calculate_prediction() {
+void QFCWNMF::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
         for (int c = 0; c < cluster_size_; c++) {

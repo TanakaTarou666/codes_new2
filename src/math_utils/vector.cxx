@@ -76,7 +76,7 @@ Vector& Vector::operator+=(const Vector& rhs) {
 
 Vector& Vector::operator-=(const Vector& rhs) {
     if (size_ != rhs.size()) {
-        std::cerr << "Vector::operator-=: Size Unmatched" << std::endl;
+        std::cerr << "Vector::operator-=: Size Unmatched!" << std::endl;
         exit(1);
     }
     for (int i = 0; i < size_; i++) {

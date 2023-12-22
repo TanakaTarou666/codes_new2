@@ -31,17 +31,17 @@ void TFCFMWithALS::set_parameters(double latent_dimension_percentage, int cluste
 void TFCFMWithALS::set_initial_values(int seed) {
     seed *= 1000000;
     w0_ = Vector(cluster_size_, 0.0, "all");
-    w_ = Matrix(cluster_size_, sum_users_items, 0.0);
-    v_ = Tensor(cluster_size_, latent_dimension_, sum_users_items);
+    w_ = Matrix(cluster_size_, sum_users_items_, 0.0);
+    v_ = Tensor(cluster_size_, latent_dimension_, sum_users_items_);
     e_ = Matrix(cluster_size_, missing_num_samples_, 0.0);
     q_ = Tensor(cluster_size_, latent_dimension_, missing_num_samples_);
-    x_ = DSSTensor(sparse_missing_data_, sum_users_items);
+    x_ = DSSTensor(sparse_missing_data_, sum_users_items_);
     membership_ = Matrix(cluster_size_, rs::num_users, 1.0 / (double)cluster_size_);
     dissimilarities_ = Matrix(cluster_size_, rs::num_users, 0);
 
     std::mt19937_64 mt;
     for (int c = 0; c < cluster_size_; c++) {
-        for (int n = 0; n < sum_users_items; n++) {
+        for (int n = 0; n < sum_users_items_; n++) {
             for (int k = 0; k < latent_dimension_; k++) {
                 mt.seed(seed);
                 // ランダムに値生成
@@ -149,12 +149,12 @@ void TFCFMWithALS::calculate_factors() {
     // 1-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_w = w_[c].get_values();
-        double wa[sum_users_items] = {};
-        double denominator_w[sum_users_items] = {};
+        double wa[sum_users_items_] = {};
+        double denominator_w[sum_users_items_] = {};
         Vector tmp_e = e_[c];
         for (int a = 0; a < 2; ++a) {
-            double numerator_w[sum_users_items] = {};
-            double denominator_w[sum_users_items] = {};
+            double numerator_w[sum_users_items_] = {};
+            double denominator_w[sum_users_items_] = {};
             int l = 0;
             for (int i = 0; i < rs::num_users; i++) {
                 double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
@@ -167,7 +167,7 @@ void TFCFMWithALS::calculate_factors() {
                     l++;
                 }
             }
-            for (int i = 0; i < sum_users_items; ++i) {
+            for (int i = 0; i < sum_users_items_; ++i) {
                 if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_ / 2);
             }
             l = 0;
@@ -181,7 +181,7 @@ void TFCFMWithALS::calculate_factors() {
                 }
             }
         }
-        for (int j_ = 0; j_ < sum_users_items; ++j_) {
+        for (int j_ = 0; j_ < sum_users_items_; ++j_) {
             w_(c, j_) = wa[j_];
         }
     }
@@ -191,12 +191,12 @@ void TFCFMWithALS::calculate_factors() {
         for (int f = 0; f < latent_dimension_; ++f) {
             double* tmp_v = v_[c][f].get_values();
             double* tmp_q = q_[c][f].get_values();
-            double va[sum_users_items] = {};
+            double va[sum_users_items_] = {};
             for (int a = 0; a < 2; ++a) {
                 double h_value[missing_num_samples_] = {};
                 int l = 0;
-                double numerator_v[sum_users_items] = {};
-                double denominator_v[sum_users_items] = {};
+                double numerator_v[sum_users_items_] = {};
+                double denominator_v[sum_users_items_] = {};
                 for (int i = 0; i < rs::num_users; i++) {
                     double tmp_membership = pow(membership_(c, i), fuzzifier_em_);
                     for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
@@ -210,7 +210,7 @@ void TFCFMWithALS::calculate_factors() {
                         l++;
                     }
                 }
-                for (int j_ = 0; j_ < sum_users_items; ++j_) {
+                for (int j_ = 0; j_ < sum_users_items_; ++j_) {
                     if (denominator_v[j_] != 0) va[j_] = -numerator_v[j_] / (denominator_v[j_] + reg_parameter_ / 2);
                 }
                 l = 0;
@@ -226,7 +226,7 @@ void TFCFMWithALS::calculate_factors() {
                     }
                 }
             }
-            for (int j_ = 0; j_ < sum_users_items; ++j_) {
+            for (int j_ = 0; j_ < sum_users_items_; ++j_) {
                 tmp_v[j_] = va[j_];
             }
         }

@@ -37,12 +37,8 @@ void QFCRecom::calculate_cluster_size_adjustments() {
     for (int c = 0; c < cluster_size_; c++) {
         double denominator = 0.0;
         for (int j = 0; j < cluster_size_; j++) {
-            if (denominator_factors[c] != 0) {
-                denominator += pow(denominator_factors[j] / denominator_factors[c], 1 / (fuzzifier_em_));
-            }
+            denominator += pow(denominator_factors[j] / denominator_factors[c], 1 / (fuzzifier_em_));
         }
         cluster_size_adjustments_[c] = 1 / denominator;
     }
 }
-
-

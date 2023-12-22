@@ -6,15 +6,18 @@
 #include "../../src/recom_methods/mf/mf.h"
 #include "../../src/recom_methods/mf/qfcmf.h"
 #include "../../src/recom_methods/mf/tfcmf.h"
-
+#include "../../src/recom_methods/wnmf/qfcwnmf.h"
+#include "../../src/recom_methods/wnmf/tfcwnmf.h"
+#include "../../src/recom_methods/wnmf/wnmf.h"
 // #define __MF__
-//#define __TFCMF__
-//#define __QFCMF__
+// #define __TFCMF__
+// #define __QFCMF__
+#define __QFCWNMF__
 // #define __FM_SGD__
 // #define __TFCFM_SGD__
-//#define __FM_ALS__
-//#define __TFCFM_ALS__
-#define __QFCFM_ALS__
+// #define __FM_ALS__
+// #define __TFCFM_ALS__
+// #define __QFCFM_ALS__
 
 int main() {
 #if defined __MF__
@@ -74,6 +77,24 @@ int main() {
             }
         }
         qfcmf.output_high_score_in_tally_result();
+    }
+#endif
+
+#if defined __QFCWNMF__
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
+        QFCWNMF qfcwnmf(mv);
+        qfcwnmf.input(rs::input_data_name);
+        for (double ld : rs::latent_dimensions) {
+            for (int c : rs::cluster_size) {
+                for (double em : rs::fuzzifier_em) {
+                    for (double lambda : rs::fuzzifier_lambda) {
+                        qfcwnmf.set_parameters(ld, c, em, lambda);
+                        qfcwnmf.tally_result();
+                    }
+                }
+            }
+        }
+        qfcwnmf.output_high_score_in_tally_result();
     }
 #endif
 
