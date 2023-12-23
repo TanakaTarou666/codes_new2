@@ -57,7 +57,7 @@ void QFCFMWithSGD::set_initial_values(int seed) {
                 mt.seed(seed);
                 // ランダムに値生成
                 std::uniform_real_distribution<> rand_v(-0.01, 0.01);
-                v_[c](n, k) = rand_v(mt);
+                v_[c](k,n) = rand_v(mt);
                 seed++;
             }
         }
@@ -193,7 +193,7 @@ double QFCFMWithSGD::calculate_objective_value() {
                           (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
-    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_));
+    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_))/2;
     return result;
 }
 
@@ -213,7 +213,7 @@ bool QFCFMWithSGD::calculate_convergence_criterion() {
     std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

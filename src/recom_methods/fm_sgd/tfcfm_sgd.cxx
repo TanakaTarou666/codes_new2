@@ -178,7 +178,7 @@ double TFCFMWithSGD::calculate_objective_value() {
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
-    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_));
+    result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_))/2;
     return result;
 }
 
@@ -195,7 +195,7 @@ bool TFCFMWithSGD::calculate_convergence_criterion() {
     std::cout << std::endl;
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
     // std::cout << " diff:" << diff << " L:" << calculate_objective_value() << "\t";
     // std::cout << "w0:" << squared_norm(prev_w0_ - w0_) << "\t";

@@ -138,7 +138,7 @@ bool FMWithSGD::calculate_convergence_criterion() {
     // std::cout << "v:" << frobenius_norm(prev_v_ - v_) << std::endl;
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
     std::cout << "L:" << calculate_objective_value() << "\t";
     std::cout << "diff:" << diff << "\t" << std::endl;

@@ -1,9 +1,9 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
+//#define ARTIFICIALITY
 //#define TEST
 //#define MOVIE
-//#define BOOK
+#define BOOK
 //#define JESTER
 
 namespace rs {
