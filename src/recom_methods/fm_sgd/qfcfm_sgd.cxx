@@ -230,9 +230,10 @@ bool QFCFMWithSGD::calculate_convergence_criterion() {
 void QFCFMWithSGD::calculate_prediction() {
     for (int index = 0; index < num_missing_value_; index++) {
         prediction_[index] = 0.0;
+        SparseVector tmp = make_one_hot_data(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]);
         for (int c = 0; c < cluster_size_; c++) {
             prediction_[index] += membership_(c, missing_data_indices_(index, 0)) *
-                                  predict_y(x_(missing_data_indices_(index, 0), sparse_missing_data_cols_[index]), w0_[c], w_[c], v_[c]);
+                                  predict_y(tmp, w0_[c], w_[c], v_[c]);
         }
     }
 }
