@@ -12,26 +12,28 @@ int main(int argc, char *argv[]) {
         TFCWNMF recom(mv);
         recom.input(rs::input_data_name);
         for (int ld = start_latent_dimension; ld <= end_latent_dimension; ld++) {
-            for (int c : rs::cluster_size) {
-                for (double em : rs::fuzzifier_em) {
-                    for (double lambda : rs::fuzzifier_lambda) {
-                        recom.set_parameters(rs::latent_dimensions[ld], c, em, lambda);
-                        for (int i = 0; i < rs::missing_pattern; i++) {
-                            // データを欠損
-                            recom.revise_missing_values();
-                            recom.train();
-                            recom.calculate_mae(i);
-                            recom.calculate_roc(i);
+            for (double rp : rs::reg_parameters) {
+                for (int c : rs::cluster_size) {
+                    for (double em : rs::fuzzifier_em) {
+                        for (double lambda : rs::fuzzifier_lambda) {
+                            recom.set_parameters(rs::latent_dimensions[ld], rp, c, em, lambda);
+                            for (int i = 0; i < rs::missing_pattern; i++) {
+                                // データを欠損
+                                recom.revise_missing_values();
+                                recom.train();
+                                recom.calculate_mae(i);
+                                recom.calculate_roc(i);
+                            }
+                            // 指標値の計算 シード値のリセット
+                            recom.precision_summury();
                         }
-                        // 指標値の計算 シード値のリセット
-                        recom.precision_summury();
                     }
                 }
             }
         }
     }
 
-        // 計測終了
+    // 計測終了
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "処理にかかった時間: " << duration.count() / 60000 << " 分 " << (duration.count() % 60000) / 1000 << " 秒 "

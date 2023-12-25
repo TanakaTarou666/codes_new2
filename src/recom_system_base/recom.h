@@ -9,6 +9,7 @@
 #include <random>
 #include <vector>
 
+#include "../math_utils/tensor.h"
 #include "../math_utils/sparse_matrix.h"
 #include "../math_utils/sparse_vector.h"
 
@@ -28,6 +29,7 @@ class Recom {
     std::vector<std::string> dirs_;
     std::vector<double> parameters_;
     std::string method_name_;
+    int sum_users_items_= rs::num_users+rs::num_items;
     // 欠損前データ
     SparseMatrix sparse_correct_data_;
     

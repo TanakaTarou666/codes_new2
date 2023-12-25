@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
         WNMF recom(mv);
         recom.input(rs::input_data_name);
         for (int ld = start_latent_dimension; ld <= end_latent_dimension; ld++) {
-            recom.set_parameters(rs::latent_dimensions[ld]);
+            recom.set_parameters(rs::latent_dimensions[ld],0);
             for (int i = 0; i < rs::missing_pattern; i++) {
                 // データを欠損
                 recom.revise_missing_values();

@@ -5,6 +5,7 @@ class TFCWNMF : virtual public TFCRecom {
    protected:
     // 潜在次元
     int latent_dimension_;
+    double reg_parameter_;
     // ユーザー行列とアイテム行列
     Tensor user_factors_, item_factors_;
     Tensor prev_user_factors_, prev_item_factors_;
@@ -17,7 +18,7 @@ class TFCWNMF : virtual public TFCRecom {
 
    public:
     TFCWNMF(int missing_pattern);
-    void set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
+    void set_parameters(double latent_dimension_percentage, double reg_parameter, int cluster_size, double fuzzifier_em, double fuzzifier_Lambda);
     void calculate_factors() override;
     void set_initial_values(int seed) override;
     double calculate_objective_value() override;

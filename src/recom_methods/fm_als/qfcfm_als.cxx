@@ -13,7 +13,8 @@ QFCFMWithALS::QFCFMWithALS(int missing_count)
       prev_v_(),
       e_(),
       q_(),
-      x_() {
+      x_(),
+      transpose_x_() {
     method_name_ = append_current_time_if_test("QFCFM_ALS");
 }
 
@@ -96,6 +97,9 @@ void QFCFMWithALS::set_initial_values(int seed) {
         }
     }
 
+    SparseMatrix tmp = sparse_missing_data_.one_hot_encode();
+    transpose_x_ = tmp.transpose();
+
     // データ表示
     // for (int i = 0; i < rs::num_users; i++) {
     //     for (int j = 0; j < x_(i, "row"); j++) {
@@ -156,97 +160,150 @@ void QFCFMWithALS::calculate_factors() {
         w0_[c] = w0a;
     }
 
-    // 1-way interactions
+    // // 1-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_w = w_[c].get_values();
+        double* tmp_e = e_[c].get_values();
         double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
-        double wa[sum_users_items_] = {};
-        double denominator_w[sum_users_items_] = {};
-        Vector tmp_e = e_[c];
-        for (int a = 0; a < 2; ++a) {
-            double numerator_w[sum_users_items_] = {};
-            double denominator_w[sum_users_items_] = {};
-            int l = 0;
-            for (int i = 0; i < rs::num_users; i++) {
-                double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
-                // double tmp_membership_times_cluster_size_adjustments = pow(membership_(c, i), fuzzifier_em_);
-                for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
-                    tmp_x = x_(i, j);
-                    tmp_x_value = tmp_x(a);
-                    tmp_x_dense_index = tmp_x.dense_index(a);
-                    numerator_w[tmp_x_dense_index] +=
-                        tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
-                    denominator_w[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_x_value * tmp_x_value;
-                    l++;
-                }
-            }
-            for (int i = 0; i < sum_users_items_; ++i) {
-                if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_/2);
-            }
-            l = 0;
-            for (int i = 0; i < rs::num_users; i++) {
-                for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
-                    tmp_x = x_(i, j);
-                    tmp_x_value = tmp_x(a);
-                    tmp_x_dense_index = tmp_x.dense_index(a);
-                    e_(c, l) += (wa[tmp_x_dense_index] - tmp_w[tmp_x_dense_index]) * tmp_x_value;
-                    l++;
-                }
-            }
-        }
         for (int a = 0; a < sum_users_items_; ++a) {
-            w_(c, a) = wa[a];
+            double numerator_w = 0;
+            double denominator_w = 0;
+            for (int b = 0; b < transpose_x_.nnz(a); b++) {
+                int tmp_user_index = transpose_x_(a, b);
+                double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, tmp_user_index), fuzzifier_em_);
+                numerator_w += tmp_membership_times_cluster_size_adjustments * (tmp_e[transpose_x_.dense_index(a, b)] - tmp_w[a]);
+                denominator_w += tmp_membership_times_cluster_size_adjustments;
+            }
+            double wa = -numerator_w / (denominator_w + reg_parameter_ / 2);
+            for (int b = 0; b < transpose_x_.nnz(a); b++) {
+                e_(c, transpose_x_.dense_index(a, b)) += wa - tmp_w[a];
+            }
+            w_(c, a) = wa;
         }
     }
+
+    // // 1-way interactions
+    // for (int c = 0; c < cluster_size_; ++c) {
+    //     double* tmp_w = w_[c].get_values();
+    //     double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
+    //     double wa[sum_users_items_] = {};
+    //     double denominator_w[sum_users_items_] = {};
+    //     Vector tmp_e = e_[c];
+    //     for (int a = 0; a < 2; ++a) {
+    //         double numerator_w[sum_users_items_] = {};
+    //         double denominator_w[sum_users_items_] = {};
+    //         int l = 0;
+    //         for (int i = 0; i < rs::num_users; i++) {
+    //             double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
+    //             // double tmp_membership_times_cluster_size_adjustments = pow(membership_(c, i), fuzzifier_em_);
+    //             for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                 tmp_x = x_(i, j);
+    //                 tmp_x_value = tmp_x(a);
+    //                 tmp_x_dense_index = tmp_x.dense_index(a);
+    //                 numerator_w[tmp_x_dense_index] +=
+    //                     tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_w[tmp_x_dense_index] * tmp_x_value) * tmp_x_value;
+    //                 denominator_w[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_x_value * tmp_x_value;
+    //                 l++;
+    //             }
+    //         }
+    //         for (int i = 0; i < sum_users_items_; ++i) {
+    //             if (denominator_w[i] != 0) wa[i] = -numerator_w[i] / (denominator_w[i] + reg_parameter_/2);
+    //         }
+    //         l = 0;
+    //         for (int i = 0; i < rs::num_users; i++) {
+    //             for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                 tmp_x = x_(i, j);
+    //                 tmp_x_value = tmp_x(a);
+    //                 tmp_x_dense_index = tmp_x.dense_index(a);
+    //                 e_(c, l) += (wa[tmp_x_dense_index] - tmp_w[tmp_x_dense_index]) * tmp_x_value;
+    //                 l++;
+    //             }
+    //         }
+    //     }
+    //     for (int a = 0; a < sum_users_items_; ++a) {
+    //         w_(c, a) = wa[a];
+    //     }
+    // }
 
     // 2-way interactions
     for (int c = 0; c < cluster_size_; ++c) {
         double* tmp_e = e_[c].get_values();
         double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         for (int f = 0; f < latent_dimension_; ++f) {
+            double h_value[missing_num_samples_] = {};
             double* tmp_v = v_[c][f].get_values();
             double* tmp_q = q_[c][f].get_values();
-            double va[sum_users_items_] = {};
-            for (int a = 0; a < 2; ++a) {
-                double h_value[missing_num_samples_] = {};
-                int l = 0;
-                double numerator_v[sum_users_items_] = {};
-                double denominator_v[sum_users_items_] = {};
-                for (int i = 0; i < rs::num_users; i++) {
-                    double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
-                    for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
-                        tmp_x = x_(i, j);
-                        tmp_x_value = tmp_x(a);
-                        tmp_x_dense_index = tmp_x.dense_index(a);
-                        h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
-                        double tmp_h = h_value[l];
-                        numerator_v[tmp_x_dense_index] +=
-                            tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
-                        denominator_v[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_h * tmp_h;
-                        l++;
-                    }
+            for (int a = 0; a < sum_users_items_; ++a) {
+                double numerator_v = 0;
+                double denominator_v = 0;
+                for (int b = 0; b < transpose_x_.nnz(a); b++) {
+                    int tmp_dense_index = transpose_x_.dense_index(a, b);
+                    double tmp_h = tmp_q[tmp_dense_index] - tmp_v[a];
+                    int tmp_user_index = transpose_x_(a, b);
+                    double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, tmp_user_index), fuzzifier_em_);
+                    h_value[tmp_dense_index] = tmp_h;
+                    numerator_v += tmp_membership_times_cluster_size_adjustments * (tmp_e[tmp_dense_index] - tmp_v[a] * tmp_h) * tmp_h;
+                    denominator_v += tmp_membership_times_cluster_size_adjustments * tmp_h * tmp_h;
                 }
-                for (int i = 0; i < sum_users_items_; ++i) {
-                    if (denominator_v[i] != 0) va[i] = -numerator_v[i] / (denominator_v[i] + reg_parameter_/2);
+                double va = -numerator_v / (denominator_v + reg_parameter_ / 2);
+                for (int b = 0; b < transpose_x_.nnz(a); b++) {
+                    int tmp_dense_index = transpose_x_.dense_index(a, b);
+                    e_(c,tmp_dense_index) += (va - tmp_v[a]) * h_value[tmp_dense_index];
+                    q_[c](f, tmp_dense_index) += (va - tmp_v[a]);
                 }
-                l = 0;
-                for (int i = 0; i < rs::num_users; i++) {
-                    for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
-                        tmp_x = x_(i, j);
-                        tmp_x_value = tmp_x(a);
-                        tmp_x_dense_index = tmp_x.dense_index(a);
-                        double difference_v = va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index];
-                        tmp_e[l] += difference_v * h_value[l];
-                        tmp_q[l] += difference_v * tmp_x_value;
-                        l++;
-                    }
-                }
-            }
-            for (int i = 0; i < sum_users_items_; ++i) {
-                tmp_v[i] = va[i];
+                v_[c](f, a) = va;
             }
         }
     }
+
+    // // 2-way interactions
+    // for (int c = 0; c < cluster_size_; ++c) {
+    //     double* tmp_e = e_[c].get_values();
+    //     double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
+    //     for (int f = 0; f < latent_dimension_; ++f) {
+    //         double* tmp_v = v_[c][f].get_values();
+    //         double* tmp_q = q_[c][f].get_values();
+    //         double va[sum_users_items_] = {};
+    //         for (int a = 0; a < 2; ++a) {
+    //             double h_value[missing_num_samples_] = {};
+    //             int l = 0;
+    //             double numerator_v[sum_users_items_] = {};
+    //             double denominator_v[sum_users_items_] = {};
+    //             for (int i = 0; i < rs::num_users; i++) {
+    //                 double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
+    //                 for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                     tmp_x = x_(i, j);
+    //                     tmp_x_value = tmp_x(a);
+    //                     tmp_x_dense_index = tmp_x.dense_index(a);
+    //                     h_value[l] = -tmp_x_value * (tmp_x_value * tmp_v[tmp_x_dense_index] - tmp_q[l]);
+    //                     double tmp_h = h_value[l];
+    //                     numerator_v[tmp_x_dense_index] +=
+    //                         tmp_membership_times_cluster_size_adjustments * (tmp_e[l] - tmp_v[tmp_x_dense_index] * tmp_h) * tmp_h;
+    //                     denominator_v[tmp_x_dense_index] += tmp_membership_times_cluster_size_adjustments * tmp_h * tmp_h;
+    //                     l++;
+    //                 }
+    //             }
+    //             for (int i = 0; i < sum_users_items_; ++i) {
+    //                 if (denominator_v[i] != 0) va[i] = -numerator_v[i] / (denominator_v[i] + reg_parameter_/2);
+    //             }
+    //             l = 0;
+    //             for (int i = 0; i < rs::num_users; i++) {
+    //                 for (int j = 0; j < sparse_missing_data_row_nnzs_[i]; j++) {
+    //                     tmp_x = x_(i, j);
+    //                     tmp_x_value = tmp_x(a);
+    //                     tmp_x_dense_index = tmp_x.dense_index(a);
+    //                     double difference_v = va[tmp_x_dense_index] - tmp_v[tmp_x_dense_index];
+    //                     tmp_e[l] += difference_v * h_value[l];
+    //                     tmp_q[l] += difference_v * tmp_x_value;
+    //                     l++;
+    //                 }
+    //             }
+    //         }
+    //         for (int i = 0; i < sum_users_items_; ++i) {
+    //             tmp_v[i] = va[i];
+    //         }
+    //     }
+    // }
 
     for (int c = 0; c < cluster_size_; c++) {
         int l = 0;
@@ -267,10 +324,12 @@ void QFCFMWithALS::calculate_factors() {
 double QFCFMWithALS::calculate_objective_value() {
     double result = 0;
     for (int c = 0; c < cluster_size_; c++) {
+        double tmp_cluster_size_adjustments = pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_);
         for (int i = 0; i < rs::num_users; i++) {
-            result += pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
+            double tmp_membership_times_cluster_size_adjustments = tmp_cluster_size_adjustments * pow(membership_(c, i), fuzzifier_em_);
+            result += tmp_membership_times_cluster_size_adjustments * dissimilarities_(c, i) +
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) *
-                          (pow(cluster_size_adjustments_[c], 1 - fuzzifier_em_) * pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
+                          (tmp_membership_times_cluster_size_adjustments - membership_(c, i));
         }
     }
     result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_))/2;
@@ -289,7 +348,7 @@ bool QFCFMWithALS::calculate_convergence_criterion() {
     // std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

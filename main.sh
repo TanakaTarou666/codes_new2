@@ -1,4 +1,4 @@
-files=("tfcwnmf" "qfcwnmf") #
+files=("tfcwnmf") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
 for file in "${files[@]}"; do #

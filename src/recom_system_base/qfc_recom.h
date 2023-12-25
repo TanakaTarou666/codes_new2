@@ -1,4 +1,3 @@
-#include "../math_utils/tensor.h"
 #include "tfc_recom.h"
 
 #ifndef __QFCRECOM__

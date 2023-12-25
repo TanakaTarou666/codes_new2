@@ -232,7 +232,7 @@ double TFCFMWithALS::calculate_objective_value() {
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
-                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - 1);
+                      1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
     result += reg_parameter_ * (squared_sum(w0_) + squared_sum(w_) + squared_sum(v_)) / 2;
@@ -251,7 +251,7 @@ bool TFCFMWithALS::calculate_convergence_criterion() {
     // std::cout << "m:" << frobenius_norm(prev_membership_ - membership_) << "\t";
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff = fabs((prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

@@ -12,6 +12,7 @@ class QFCFMWithALS : virtual public FMBase, virtual public QFCRecom{
     Matrix w_, prev_w_, e_;
     Tensor v_, prev_v_, q_;
     DSSTensor x_;
+    SparseMatrix  transpose_x_;
 
    public:
     QFCFMWithALS(int missing_count);

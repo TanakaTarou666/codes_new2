@@ -1,4 +1,3 @@
-#include "../math_utils/tensor.h"
 #include "recom.h"
 
 #ifndef __TFCRECOM__

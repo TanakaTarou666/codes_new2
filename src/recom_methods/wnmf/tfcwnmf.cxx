@@ -15,7 +15,8 @@ TFCWNMF::TFCWNMF(int missing_count)
     method_name_ = append_current_time_if_test("TFCWNMF");
 }
 
-void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_size, double fuzzifier_em, double fuzzifier_lambda) {
+void TFCWNMF::set_parameters(double latent_dimension_percentage, double reg_parameter, int cluster_size, double fuzzifier_em,
+                             double fuzzifier_lambda) {
 #if defined ARTIFICIALITY
     latent_dimension_ = latent_dimension_percentage;
 #else
@@ -29,10 +30,11 @@ void TFCWNMF::set_parameters(double latent_dimension_percentage, int cluster_siz
         return;
     }
 #endif
+    reg_parameter_ = reg_parameter;
     cluster_size_ = cluster_size;
     fuzzifier_em_ = fuzzifier_em;
     fuzzifier_lambda_ = fuzzifier_lambda;
-    parameters_ = {(double)latent_dimension_,(double)cluster_size_, fuzzifier_em_, fuzzifier_lambda_};
+    parameters_ = {(double)latent_dimension_, reg_parameter_, (double)cluster_size_, fuzzifier_em_, fuzzifier_lambda_};
     dirs_ = mkdir_result({method_name_}, parameters_, num_missing_value_);
     user_factors_ = Tensor(cluster_size_, rs::num_users, latent_dimension_);
     item_factors_ = Tensor(cluster_size_, rs::num_items, latent_dimension_);
@@ -105,8 +107,7 @@ void TFCWNMF::calculate_factors() {
         Matrix item_denominator = sparse_prediction_.transpose() * tmp;
         for (int j = 0; j < rs::num_items; j++) {
             for (int k = 0; k < latent_dimension_; k++) {
-                if (item_denominator(j, k) == 0) item_denominator(j, k) = 1.0e-07;
-                item_factors_[c](j, k) *= (item_numerator(j, k) / item_denominator(j, k));
+                item_factors_[c](j, k) *= item_numerator(j, k) / (item_denominator(j, k) + reg_parameter_ / 2);
             }
         }
     }
@@ -119,12 +120,11 @@ void TFCWNMF::calculate_factors() {
         Matrix user_denominator = sparse_prediction_ * tmp_item_factors_;
         for (int i = 0; i < rs::num_users; i++) {
             for (int k = 0; k < latent_dimension_; k++) {
-                if (user_denominator(i, k) == 0) user_denominator(i, k) = 1.0e-07;
-                user_factors_[c](i, k) *= (user_numerator(i, k) / user_denominator(i, k));
+                user_factors_[c](i, k) *= user_numerator(i, k) / (user_denominator(i, k) + reg_parameter_ / 2);
             }
         }
     }
-    
+
     for (int c = 0; c < cluster_size_; c++) {
         user_factor_values_ = user_factors_[c].get_values();
         for (int i = 0; i < rs::num_users; i++) {
@@ -152,6 +152,7 @@ double TFCWNMF::calculate_objective_value() {
                       1 / (fuzzifier_lambda_ * (fuzzifier_em_ - 1)) * (pow(membership_(c, i), fuzzifier_em_) - membership_(c, i));
         }
     }
+    result += reg_parameter_ * (squared_sum(user_factors_) + squared_sum(item_factors_)) / 2;
     return result;
 }
 
