@@ -149,7 +149,6 @@ void QFCWNMF::calculate_factors() {
     calculate_membership();
 
     calculate_cluster_size_adjustments();
-    std::cout << cluster_size_adjustments_ << std::endl;
 }
 
 double QFCWNMF::calculate_objective_value() {

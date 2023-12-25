@@ -1,4 +1,6 @@
-files=("tfcwnmf" "qfcwnmf") #
+#files=("tfcwnmf" "qfcwnmf") #
+#files=("tfcmf" "qfcmf") #
+files=("wnmf") #
 #files=("tf_sgd" "qfcfm_sgd") #
 #files=("tfcfm_sgd") #
 # 制御用のFIFOファイルを作成

@@ -12,6 +12,7 @@
 // #define __MF__
 // #define __TFCMF__
 // #define __QFCMF__
+#define __TFCWNMF__
 #define __QFCWNMF__
 // #define __FM_SGD__
 // #define __TFCFM_SGD__
@@ -79,7 +80,23 @@ int main() {
         qfcmf.output_high_score_in_tally_result();
     }
 #endif
-
+#if defined __TFCWNMF__
+    for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
+        TFCWNMF tfcwnmf(mv);
+        tfcwnmf.input(rs::input_data_name);
+        for (double ld : rs::latent_dimensions) {
+            for (int c : rs::cluster_size) {
+                for (double em : rs::fuzzifier_em) {
+                    for (double lambda : rs::fuzzifier_lambda) {
+                        tfcwnmf.set_parameters(ld, c, em, lambda);
+                        tfcwnmf.tally_result();
+                    }
+                }
+            }
+        }
+        tfcwnmf.output_high_score_in_tally_result();
+    }
+#endif
 #if defined __QFCWNMF__
     for (int mv = rs::start_missing_valu; mv <= rs::end_missing_valu; mv += rs::step_missing_valu) {
         QFCWNMF qfcwnmf(mv);

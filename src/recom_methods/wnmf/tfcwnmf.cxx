@@ -146,7 +146,6 @@ void TFCWNMF::calculate_factors() {
 
 double TFCWNMF::calculate_objective_value() {
     double result;
-    double user_factors__L2Norm, item_factors__L2Norm;
     for (int c = 0; c < cluster_size_; c++) {
         for (int i = 0; i < rs::num_users; i++) {
             result += pow(membership_(c, i), fuzzifier_em_) * dissimilarities_(c, i) +
