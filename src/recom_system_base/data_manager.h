@@ -131,8 +131,8 @@ const int num_users = 542;
 const int num_items = 4495;
 const int num_samples=1291999;
 const double max_value = 5.0;
-const int start_missing_valu = 100000;
-const int end_missing_valu = 100000;
+const int start_missing_valu = 20000;
+const int end_missing_valu = 20000;
 const int step_missing_valu = 2000;
 #endif
 
