@@ -170,7 +170,7 @@ bool QFCWNMF::calculate_convergence_criterion() {
                   frobenius_norm(prev_membership_ - membership_) + squared_norm(prev_cluster_size_adjustments_ - cluster_size_adjustments_);
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff =fabs( (prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

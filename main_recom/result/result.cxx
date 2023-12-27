@@ -13,12 +13,12 @@
 // #define __TFCMF__
 // #define __QFCMF__
 #define __TFCWNMF__
-#define __QFCWNMF__
-// #define __FM_SGD__
-// #define __TFCFM_SGD__
-// #define __FM_ALS__
-// #define __TFCFM_ALS__
-// #define __QFCFM_ALS__
+// #define __QFCWNMF__
+//  #define __FM_SGD__
+//  #define __TFCFM_SGD__
+//  #define __FM_ALS__
+//  #define __TFCFM_ALS__
+//  #define __QFCFM_ALS__
 
 int main() {
 #if defined __MF__
@@ -85,11 +85,13 @@ int main() {
         TFCWNMF tfcwnmf(mv);
         tfcwnmf.input(rs::input_data_name);
         for (double ld : rs::latent_dimensions) {
-            for (int c : rs::cluster_size) {
-                for (double em : rs::fuzzifier_em) {
-                    for (double lambda : rs::fuzzifier_lambda) {
-                        tfcwnmf.set_parameters(ld, c, em, lambda);
-                        tfcwnmf.tally_result();
+            for (double rp : rs::reg_parameters) {
+                for (int c : rs::cluster_size) {
+                    for (double em : rs::fuzzifier_em) {
+                        for (double lambda : rs::fuzzifier_lambda) {
+                            tfcwnmf.set_parameters(ld,rp, c, em, lambda);
+                            tfcwnmf.tally_result();
+                        }
                     }
                 }
             }

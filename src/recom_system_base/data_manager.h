@@ -1,8 +1,8 @@
 #include <iomanip>
 
-#define ARTIFICIALITY
+//#define ARTIFICIALITY
 //#define TEST
-//#define MOVIE
+#define MOVIE
 //#define BOOK
 //#define JESTER
 

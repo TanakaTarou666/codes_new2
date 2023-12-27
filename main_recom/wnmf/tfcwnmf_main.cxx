@@ -12,11 +12,11 @@ int main(int argc, char *argv[]) {
         TFCWNMF recom(mv);
         recom.input(rs::input_data_name);
         for (int ld = start_latent_dimension; ld <= end_latent_dimension; ld++) {
-            for (double rp : rs::reg_parameters) {
+            //for (double rp : rs::reg_parameters) {}
                 for (int c : rs::cluster_size) {
                     for (double em : rs::fuzzifier_em) {
                         for (double lambda : rs::fuzzifier_lambda) {
-                            recom.set_parameters(rs::latent_dimensions[ld], rp, c, em, lambda);
+                            recom.set_parameters(rs::latent_dimensions[ld], 0, c, em, lambda);
                             for (int i = 0; i < rs::missing_pattern; i++) {
                                 // データを欠損
                                 recom.revise_missing_values();
@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
                             }
                             // 指標値の計算 シード値のリセット
                             recom.precision_summury();
-                        }
                     }
                 }
             }

@@ -107,6 +107,7 @@ void TFCWNMF::calculate_factors() {
         Matrix item_denominator = sparse_prediction_.transpose() * tmp;
         for (int j = 0; j < rs::num_items; j++) {
             for (int k = 0; k < latent_dimension_; k++) {
+                if (item_denominator(j, k) == 0) item_denominator(j, k) = 1.0e-07;
                 item_factors_[c](j, k) *= item_numerator(j, k) / (item_denominator(j, k) + reg_parameter_ / 2);
             }
         }
@@ -120,6 +121,7 @@ void TFCWNMF::calculate_factors() {
         Matrix user_denominator = sparse_prediction_ * tmp_item_factors_;
         for (int i = 0; i < rs::num_users; i++) {
             for (int k = 0; k < latent_dimension_; k++) {
+                if (user_denominator(i, k) == 0) user_denominator(i, k) = 1.0e-07;
                 user_factors_[c](i, k) *= user_numerator(i, k) / (user_denominator(i, k) + reg_parameter_ / 2);
             }
         }
@@ -163,7 +165,7 @@ bool TFCWNMF::calculate_convergence_criterion() {
                   frobenius_norm(prev_membership_ - membership_);
 #else
     objective_value_ = calculate_objective_value();
-    double diff = (prev_objective_value_ - objective_value_) / prev_objective_value_;
+    double diff =fabs( (prev_objective_value_ - objective_value_) / prev_objective_value_);
     prev_objective_value_ = objective_value_;
 #endif
     if (std::isfinite(diff)) {

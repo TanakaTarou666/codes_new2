@@ -1,11 +1,11 @@
-#files=("tfcwnmf" "qfcwnmf") #
+files=("tfcwnmf" "qfcwnmf") #
 #files=("tfcmf" "qfcmf") #
-files=("wnmf") #
+#files=("wnmf") #
 #files=("tf_sgd" "qfcfm_sgd") #
 #files=("tfcfm_sgd") #
 # 制御用のFIFOファイルを作成
 # 2つのコアで並列処理を実行
-core_count=0                                                            #
+core_count=3                                                          #
 dimension=3                                                             #
 index=0                                                                 #
 for file in "${files[@]}"; do                                           #
